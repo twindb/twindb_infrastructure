@@ -21,7 +21,8 @@ test_requirements = [
 setup(
     name='twindb_infrastructure',
     version='0.1.0',
-    description="TwinDB Infrastructure is a collection of everything to manage TwinDB infrastructure",
+    description="TwinDB Infrastructure is a collection of everything"
+                " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
     author_email='dev@twindb.com',
