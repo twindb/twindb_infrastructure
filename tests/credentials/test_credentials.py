@@ -1,6 +1,8 @@
 import mock as mock
 import pytest
 from twindb_infrastructure.credentials.aws_credentials import AwsCredentials
+from twindb_infrastructure.credentials.cloudflare_credentials import \
+    CloudFlareCredentials
 from twindb_infrastructure.credentials.credentials import Credentials, \
     CredentialsException
 
@@ -56,3 +58,14 @@ AWS_INSTANCE_USERNAME_yyy = "centos"
     assert ac.aws_default_region == 'xxx'
     assert ac.aws_default_ami == 'yyy'
     assert ac.aws_instance_username['yyy'] == 'centos'
+
+
+def test_cloudflare_sets_options(config):
+    config.write("""
+[cloudflare]
+CLOUDFLARE_EMAIL = "foo"
+CLOUDFLARE_AUTH_KEY = "bar"
+""")
+    cfc = CloudFlareCredentials(config_path=str(config))
+    assert cfc.cloudflare_email == 'foo'
+    assert cfc.cloudflare_auth_key == 'bar'
