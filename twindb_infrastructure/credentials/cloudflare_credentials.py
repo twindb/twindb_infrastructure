@@ -16,4 +16,3 @@ class CloudFlareCredentials(Credentials):
         for option in self.config.options('cloudflare'):
             value = self.config.get('cloudflare', option).strip('"\'')
             setattr(self, option, value)
-
