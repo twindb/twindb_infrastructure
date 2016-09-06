@@ -1,4 +1,4 @@
-from subprocess import check_output, call
+from subprocess import Popen, PIPE
 from twindb_infrastructure.credentials.credentials import Credentials, \
     CREDENTIALS_CONFIG, CredentialsException
 
@@ -22,5 +22,6 @@ class SshCredentials(Credentials):
         with open(self.private_key_file) as fp:
             self.private_key = fp.read()
 
-        self.public_key = check_output(['ssh-keygen', '-y', '-f',
-                                        self.private_key_file])
+        p = Popen(['ssh-keygen', '-y', '-f', self.private_key_file],
+                  stdout=PIPE, stderr=PIPE)
+        self.public_key, cerr = p.communicate()

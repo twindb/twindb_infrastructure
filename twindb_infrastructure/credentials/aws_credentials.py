@@ -27,4 +27,3 @@ class AwsCredentials(Credentials):
                 self.aws_instance_username[ami] = value
             else:
                 setattr(self, option, value)
-
