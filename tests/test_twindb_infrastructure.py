@@ -12,7 +12,7 @@ Tests for `twindb_infrastructure` module.
 from click.testing import CliRunner
 
 from twindb_infrastructure import cli
-from twindb_infrastructure.twindb_infrastructure import show
+from twindb_infrastructure.twindb_infra import show
 
 
 def test_command_line_interface():
