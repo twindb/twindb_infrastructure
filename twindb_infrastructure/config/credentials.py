@@ -1,7 +1,6 @@
 import ConfigParser
 import os
-
-CREDENTIALS_CONFIG = "/etc/twindb/twindb_infrastructure.conf"
+from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 
 
 class CredentialsException(Exception):
@@ -17,7 +16,7 @@ class Credentials(object):
     config_path = None
     """TwinDB Intrastructure Config"""
 
-    def __init__(self, config_path=CREDENTIALS_CONFIG):
+    def __init__(self, config_path=TWINDB_INFRA_CONFIG):
         """
 
         :type config_path: str

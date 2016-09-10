@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
-from twindb_infrastructure.credentials.credentials import Credentials, \
-    CREDENTIALS_CONFIG, CredentialsException
+from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
+from twindb_infrastructure.config.credentials import Credentials, \
+    CredentialsException
 
 
 class SshCredentials(Credentials):
@@ -9,7 +10,7 @@ class SshCredentials(Credentials):
     private_key = None
     public_key = None
 
-    def __init__(self, config_path=CREDENTIALS_CONFIG):
+    def __init__(self, config_path=TWINDB_INFRA_CONFIG):
         super(SshCredentials, self).__init__(config_path=config_path)
         my_section = 'ssh'
         if not self.config.has_section(my_section):

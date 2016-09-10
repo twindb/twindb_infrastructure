@@ -1,10 +1,10 @@
 import pytest
-from twindb_infrastructure.credentials.aws_credentials import AwsCredentials
-from twindb_infrastructure.credentials.cloudflare_credentials import \
+from twindb_infrastructure.config.aws_credentials import AwsCredentials
+from twindb_infrastructure.config.cloudflare_credentials import \
     CloudFlareCredentials
-from twindb_infrastructure.credentials.credentials import Credentials, \
+from twindb_infrastructure.config.credentials import Credentials, \
     CredentialsException
-from twindb_infrastructure.credentials.ssh_credentials import SshCredentials
+from twindb_infrastructure.config.ssh_credentials import SshCredentials
 
 
 @pytest.fixture

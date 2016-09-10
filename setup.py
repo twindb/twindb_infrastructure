@@ -34,7 +34,7 @@ setup(
                  'twindb_infrastructure'},
     entry_points={
         'console_scripts': [
-            'twindb_infrastructure=twindb_infrastructure.cli:main'
+            'twindb_infra=twindb_infrastructure.twindb_infra:main'
         ]
     },
     include_package_data=True,

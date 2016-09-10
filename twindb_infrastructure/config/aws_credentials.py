@@ -1,5 +1,7 @@
-from twindb_infrastructure.credentials.credentials import Credentials, \
-    CREDENTIALS_CONFIG, CredentialsException
+import os
+from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
+from twindb_infrastructure.config.credentials import Credentials, \
+    CredentialsException
 
 
 class AwsCredentials(Credentials):
@@ -13,7 +15,7 @@ class AwsCredentials(Credentials):
         aws_default_ami: "centos"
     }
 
-    def __init__(self, config_path=CREDENTIALS_CONFIG):
+    def __init__(self, config_path=TWINDB_INFRA_CONFIG):
         super(AwsCredentials, self).__init__(config_path=config_path)
         if not self.config.has_section('aws'):
             raise CredentialsException('There is no aws section in config %s'
@@ -27,3 +29,6 @@ class AwsCredentials(Credentials):
                 self.aws_instance_username[ami] = value
             else:
                 setattr(self, option, value)
+        os.environ["AWS_ACCESS_KEY_ID"] = self.aws_access_key_id
+        os.environ["AWS_SECRET_ACCESS_KEY"] = self.aws_secret_access_key
+        os.environ["AWS_DEFAULT_REGION"] = self.aws_default_region
