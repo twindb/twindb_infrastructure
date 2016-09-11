@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Infrastructure database
+TwinDB Amazon infrastructure
 """
 import boto3
 import click
@@ -23,14 +23,9 @@ pass_path = click.make_pass_decorator(ConfigPath, ensure=True)
 @pass_path
 def main(c_path, config):
     """
-    Console script to work with TwinDB Infrastructure Database
+    Console script to work with TwinDB Amazon Infrastructure
     """
     c_path.config_path = config
-
-    # config_klass = Config(config_path=config)
-    # aws_cred_path = config_klass.config.get('default', 'credentials')
-    # AwsCredentials(config_path=aws_cred_path)
-    # show()
 
 
 @main.command()
