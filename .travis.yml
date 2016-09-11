@@ -10,9 +10,6 @@ deploy:
   provider: pypi
   user: twindb
 env:
-- TOXENV=py35
-- TOXENV=py34
-- TOXENV=py33
 - TOXENV=py27
 - TOXENV=py26
 - TOXENV=pypy
