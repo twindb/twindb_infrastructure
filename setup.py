@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -27,9 +27,7 @@ setup(
     author="TwinDB Development Team",
     author_email='dev@twindb.com',
     url='https://github.com/twindb/twindb_infrastructure',
-    packages=[
-        'twindb_infrastructure',
-    ],
+    packages=find_packages(),
     package_dir={'twindb_infrastructure':
                  'twindb_infrastructure'},
     entry_points={
