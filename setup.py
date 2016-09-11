@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -11,7 +11,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'Click>=6.0',
-    # TODO: put package requirements here
+    'boto3'
 ]
 
 test_requirements = [
@@ -20,16 +20,14 @@ test_requirements = [
 
 setup(
     name='twindb_infrastructure',
-    version='0.1.1',
+    version='0.1.2',
     description="TwinDB Infrastructure is a collection of everything"
                 " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
     author_email='dev@twindb.com',
     url='https://github.com/twindb/twindb_infrastructure',
-    packages=[
-        'twindb_infrastructure',
-    ],
+    packages=find_packages(),
     package_dir={'twindb_infrastructure':
                  'twindb_infrastructure'},
     entry_points={
