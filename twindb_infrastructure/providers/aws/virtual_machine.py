@@ -1,4 +1,3 @@
-import logging
 import time
 from twindb_infrastructure.providers.aws.connection import AWSConnection
 from twindb_infrastructure.providers.aws.network import AWSNetwork, AWSFirewall
@@ -76,8 +75,6 @@ class AWSVirtualMachine(object):
 
         default_ami = self.get_default_ami()
 
-        logging.info('Creating instance with type %s and AMI %s' % (self._instance_type, default_ami))
-
         output = self._ec2.run_instances(
             SubnetId=self._network.get_default_subnet(),
             ImageId=default_ami,
@@ -91,9 +88,6 @@ class AWSVirtualMachine(object):
         )
 
         self._id = output['Instances'][0]['InstanceId']
-
-        logging.info('Instance created %s' % self._id)
-        logging.info('Waiting up to 300s for instance to transition to "running" state')
 
         # We wait for the instance to be ready in 300 seconds
         timeout = 300
@@ -123,8 +117,6 @@ class AWSVirtualMachine(object):
 
         # Open up access to port 22 to allow SSH
         self._firewall.allow_port(self._ssh_port)
-
-        logging.info('Instance ready')
 
         return True
 
@@ -161,8 +153,6 @@ class AWSVirtualMachine(object):
     def get_default_ami(self):
         prefix = self._instance_type.split('.')[0]
         virt_type = 'paravirtual' if prefix in NON_HVM_PREFIXES else 'hvm'
-
-        logging.info('Searching for Amazon AMI for HVM instances')
 
         output = self._ec2.describe_images(
             Owners=['amazon'],
