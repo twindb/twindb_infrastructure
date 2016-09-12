@@ -12,15 +12,14 @@ SA_EAST_1 = 'sa-east-1'
 
 
 class AWSConnection(object):
-    def __init__(self, aws_access_key_id, aws_secret_access_key, zone):
+    def __init__(self, aws_access_key_id, aws_secret_access_key, region):
         self._aws_access_key_id = aws_access_key_id
         self._aws_secret_access_key = aws_secret_access_key
 
-        if not util.is_valid_zone(zone):
-            raise ValueError('Incorrect zone %s passed' % zone)
+        if not util.is_region(region):
+            raise ValueError('Incorrect region %s passed' % region)
 
-        self._region = util.get_region(zone)
-        self._zone = zone
+        self._region = region
 
     def get_connection(self):
         session = boto3.Session(aws_access_key_id=self._aws_access_key_id,
@@ -31,7 +30,3 @@ class AWSConnection(object):
     @property
     def region(self):
         return self._region
-
-    @property
-    def zone(self):
-        return self._zone
