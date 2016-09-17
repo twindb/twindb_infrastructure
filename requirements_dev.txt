@@ -1,3 +1,4 @@
+python-etcd
 boto3
 click
 pip==8.1.2

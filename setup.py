@@ -32,7 +32,8 @@ setup(
                  'twindb_infrastructure'},
     entry_points={
         'console_scripts': [
-            'twindb_aws=twindb_infrastructure.twindb_aws:main'
+            'twindb_aws=twindb_infrastructure.twindb_aws:main',
+            'twindb_etcd=twindb_infrastructure.twindb_etcd:main'
         ]
     },
     include_package_data=True,
