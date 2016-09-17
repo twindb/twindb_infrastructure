@@ -6,29 +6,13 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import click
+from twindb_infrastructure import ConfigPath, parse_config
 from twindb_infrastructure.clogging import setup_logging
-from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
-    ConfigException
+from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG
 
-
-class TwinDBInfraException(Exception):
-    pass
-
-
-class ConfigPath(object):
-    config_path = None
 
 pass_path = click.make_pass_decorator(ConfigPath, ensure=True)
 log = logging.getLogger(__name__)
-
-
-def parse_config(path):
-    """Parse TwinDB Infrastructure config"""
-    try:
-        return Config(path)
-    except ConfigException as err:
-        log.error(err)
-        exit(-1)
 
 
 @click.group()
