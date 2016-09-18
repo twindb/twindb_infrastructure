@@ -1,4 +1,3 @@
-import pytest
 from twindb_infrastructure.providers.aws import util
 
 

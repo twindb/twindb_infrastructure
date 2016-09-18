@@ -10,3 +10,5 @@ coverage==4.1
 Sphinx==1.4.4
 PyYAML==3.11
 pytest==2.9.2
+pytest-mock==1.2
+moto==0.4.27

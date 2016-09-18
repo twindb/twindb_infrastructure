@@ -1,4 +1,4 @@
-import os
+import boto3
 import time
 from botocore.exceptions import ClientError
 from twindb_infrastructure.providers.aws.connection import AWSConnection
@@ -11,40 +11,17 @@ class AWSNetwork(object):
 
     def __init__(self, aws_connection, zone):
         self._aws_connection = aws_connection
-        self._ec2 = self._aws_connection.client('ec2')
         self._zone = zone
+
+        self.ec2_client = self._aws_connection.client('ec2')
+        self.ec2_resource = boto3.resource('ec2')
 
         self._default_vpc = None
         self._default_subnet = None
 
-    def get_default_subnet(self):
-        if self._default_subnet is None:
-            vpc_id = self.get_default_vpc()
-
-            if vpc_id is None:
-                vpc_id = self._create_vpc()
-
-            output = self._ec2.describe_subnets(
-                Filters=[
-                    {'Name': 'availabilityZone', 'Values': [self._zone]},
-                    {'Name': 'state', 'Values': ['available']},
-                    {'Name': 'vpc-id', 'Values': [vpc_id]}
-                ]
-            )
-
-            if not output:
-                return None
-
-            if len(output['Subnets']) < 1:
-                self._default_subnet = self._create_subnet()
-            else:
-                self._default_subnet = output['Subnets'].pop()['SubnetId']
-
-        return self._default_subnet
-
     def get_default_vpc(self):
         if self._default_vpc is None:
-            output = self._ec2.describe_vpcs(
+            output = self.ec2_client.describe_vpcs(
                 Filters=[
                     {'Name': 'state', 'Values': ['available']}
                 ]
@@ -53,21 +30,20 @@ class AWSNetwork(object):
             if not output:
                 return None
 
-            if len(output['Vpcs']) < 1:
-                return None
+            vpcs = output['Vpcs']
 
-            self._default_vpc = output['Vpcs'].pop()['VpcId']
+            self._default_vpc = self.create_vpc() if len(vpcs) < 1 else self.ec2_resource.Vpc(vpcs.pop()['VpcId'])
 
         return self._default_vpc
 
-    def _create_vpc(self):
-        output = self._ec2.create_vpc(CidrBlock='10.0.0.0/16', InstanceTenancy='default')
+    def create_vpc(self):
+        output = self.ec2_client.create_vpc(CidrBlock='10.0.0.0/16', InstanceTenancy='default')
         vpc_id = output['Vpc']['VpcId']
 
         # We wait for the VPC to be ready in 300 seconds
         timeout = 300
         while timeout > 0:
-            output = self._ec2.describe_vpcs(
+            output = self.ec2_client.describe_vpcs(
                 VpcIds=[vpc_id],
                 Filters=[
                     {'Name': 'state', 'Values': ['available']}
@@ -85,26 +61,45 @@ class AWSNetwork(object):
         'true' on the VPC resolves this. See:
         http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_DHCP_Options.html
         """
-        output = self._ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames=True)
+        self.ec2_client.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={'Value': True})
 
         # If the timeout expired then we return an error
         if timeout < 0:
             return False
 
-        return vpc_id
+        return self.ec2_resource.Vpc(vpc_id)
 
-    def _create_subnet(self, vpc_id):
-        output = self._ec2.create_subnet(VpcId=vpc_id, CidrBlock='10.0.0.0/24', AvailabilityZone=self._zone)
+    def get_default_subnet(self):
+        if self._default_subnet is None:
+            vpc = self.get_default_vpc()
+
+            output = self.ec2_client.describe_subnets(
+                Filters=[
+                    {'Name': 'availabilityZone', 'Values': [self._zone]},
+                    {'Name': 'vpc-id', 'Values': [vpc.id]}
+                ]
+            )
+
+            if not output:
+                return None
+
+            subnets = output['Subnets']
+
+            self._default_subnet = self.create_subnet(vpc.id) if len(subnets) < 1 else \
+                self.ec2_resource.Subnet(subnets.pop()['SubnetId'])
+
+        return self._default_subnet
+
+    def create_subnet(self, vpc_id):
+        output = self.ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.0.0/24', AvailabilityZone=self._zone)
         subnet_id = output['Subnet']['SubnetId']
 
         # We wait for the VPC to be ready in 300 seconds
         timeout = 300
         while timeout > 0:
-            output = self._ec2.describe_subnets(
+            output = self.ec2_client.describe_subnets(
                 SubnetIds=[subnet_id],
-                Filters=[
-                    {'Name': 'state', 'Values': ['available']}
-                ]
+                Filters=[]
             )
 
             if len(output['Subnets']) > 0:
@@ -117,7 +112,7 @@ class AWSNetwork(object):
         if timeout < 0:
             return False
 
-        return subnet_id
+        return self.ec2_resource.Subnet(subnet_id)
 
 
 class AWSFirewall(object):
@@ -135,35 +130,39 @@ class AWSFirewall(object):
         """
         self._aws_network = aws_network
 
-        self._ec2 = self._aws_connection.client('ec2')
+        self.ec2_client = self._aws_connection.client('ec2')
+        self.ec2_resource = boto3.resource('ec2')
+
         self._default_group = None
         self._firewall_set = set()
 
     def get_default_security_group(self):
         if self._default_group is None:
-            self._default_group = self._create_security_group(self.DEFAULT_SECURITY_GROUP_NAME,
-                                                              self.DEFAULT_SECURITY_GROUP_DESC)
+            vpc = self._aws_network.get_default_vpc()
+
+            output = self.ec2_client.describe_security_groups(
+                Filters=[
+                    {'Name': 'group-name', 'Values': [self.DEFAULT_SECURITY_GROUP_NAME]},
+                    {'Name': 'vpc-id', 'Values': [vpc.id]}
+                ]
+            )
+
+            if not output:
+                return None
+
+            security_groups = output['SecurityGroups']
+            if len(security_groups) < 1:
+                self._default_group = self.create_security_group(self.DEFAULT_SECURITY_GROUP_NAME,
+                                                                 self.DEFAULT_SECURITY_GROUP_DESC)
+            else:
+                self._default_group = self.ec2_resource.SecurityGroup(security_groups.pop()['GroupId'])
 
         return self._default_group
 
-    def cleanup(self):
-        return self._delete_security_group()
-
-    def allow_port(self, port):
-        if port in self._firewall_set:
-            return True
-
-        for protocol in ['tcp', 'udp']:
-            self._ec2.authorize_security_group_ingress(GroupId=self._default_group, FromPort=port, ToPort=port,
-                                                       CidrIp='0.0.0.0/0', IpProtocol=protocol)
-
-        self._firewall_set.add(port)
-
-        return True
-
-    def _create_security_group(self, group_name, group_description):
-        vpc_id = self._aws_network.get_default_vpc()
-        output = self._ec2.create_security_group(GroupName=group_name, Description=group_description, VpcId=vpc_id)
+    def create_security_group(self, group_name, group_description):
+        vpc = self._aws_network.get_default_vpc()
+        output = self.ec2_client.create_security_group(GroupName=group_name, Description=group_description,
+                                                       VpcId=vpc.id)
 
         group_id = output['GroupId']
 
@@ -171,10 +170,10 @@ class AWSFirewall(object):
         timeout = 300
         while timeout > 0:
             try:
-                output = self._ec2.describe_security_groups(
+                output = self.ec2_client.describe_security_groups(
                     GroupIds=[group_id],
                     Filters=[
-                        {'Name': 'vpc-id', 'Values': [vpc_id]}
+                        {'Name': 'vpc-id', 'Values': [vpc.id]}
                     ]
                 )
             except ClientError as e:
@@ -190,8 +189,32 @@ class AWSFirewall(object):
         if timeout < 0:
             return False
 
-        return group_id
+        return self.ec2_resource.SecurityGroup(group_id)
 
-    def _delete_security_group(self):
-        self._ec2.delete_security_group(GroupId=self._default_group)
+    def cleanup(self):
+        return self.delete_security_group()
+
+    def allow_port(self, port, cidr_ip='0.0.0.0/0', protocol='tcp'):
+        if port in self._firewall_set:
+            return True
+
+        self.ec2_client.authorize_security_group_ingress(GroupId=self.get_default_security_group().id,
+                                                         IpPermissions=[{
+                                                             'IpProtocol': protocol,
+                                                             'FromPort': port,
+                                                             'ToPort': port,
+                                                             'IpRanges': [
+                                                                 {'CidrIp': cidr_ip}
+                                                             ]
+                                                         }])
+
+        self._firewall_set.add(port)
+
+        return True
+
+    def delete_security_group(self):
+        if self._default_group is not None:
+            self.ec2_client.delete_security_group(GroupId=self._default_group.id)
+            self._default_group = None
+
         return True
