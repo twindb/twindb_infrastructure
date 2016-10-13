@@ -10,10 +10,12 @@ deploy:
   provider: pypi
   user: twindb
 env:
-- TOXENV=py27
 - TOXENV=py26
+- TOXENV=py27
 - TOXENV=pypy
+- TOXENV=flake8
+- TOXENV=cov
 install: pip install -U tox
 language: python
-python: 3.5
+python: 2.7
 script: tox -e ${TOXENV}

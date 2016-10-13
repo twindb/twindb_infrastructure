@@ -156,8 +156,6 @@ def setup_logging(logger, debug=False):
         logger.setLevel(logging.INFO)
 
 
-
-
 def main():
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
