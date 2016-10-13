@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from pip.req import parse_requirements
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -11,12 +11,11 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'Click>=6.0',
-    'boto3'
+    'boto3', 'logutils', 'pip'
 ]
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+test_requirements = [str(ir.req) for ir in
+                     parse_requirements('requirements_dev.txt', session=False)]
 
 setup(
     name='twindb-infrastructure',

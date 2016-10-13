@@ -1,7 +1,9 @@
+import mock
 import pytest
 from twindb_infrastructure.config.aws_credentials import AwsCredentials
 from twindb_infrastructure.config.cloudflare_credentials import \
     CloudFlareCredentials
+from twindb_infrastructure.config.config import Config, ConfigException
 from twindb_infrastructure.config.credentials import Credentials, \
     CredentialsException
 from twindb_infrastructure.config.ssh_credentials import SshCredentials
@@ -47,6 +49,33 @@ XFS1IpIg+KIzUDtmGDi5uIB4KTps3YmpF3iqCn6oQkQnFZBFBbY=
 """)
     fp.chmod(0400)
     return fp
+
+
+@mock.patch.object(AwsCredentials, '__init__')
+@mock.patch.object(SshCredentials, '__init__')
+@mock.patch.object(CloudFlareCredentials, '__init__')
+def test_config_init(mock_cf, mock_ssh, mock_aws, config):
+    mock_aws.return_value = None
+    mock_ssh.return_value = None
+    mock_cf.return_value = None
+
+    c = Config(str(config))
+    c.config_path = str(config)
+    mock_aws.assert_called_once_with(config_path=str(config))
+    mock_ssh.assert_called_once_with(config_path=str(config))
+    mock_cf.assert_called_once_with(config_path=str(config))
+
+
+@mock.patch.object(AwsCredentials, '__init__')
+@mock.patch.object(SshCredentials, '__init__')
+@mock.patch.object(CloudFlareCredentials, '__init__')
+def test_config_init(mock_cf, mock_ssh, mock_aws, config):
+    mock_aws.return_value = None
+    mock_ssh.return_value = None
+    mock_cf.side_effect = CredentialsException
+
+    with pytest.raises(ConfigException):
+        Config(str(config))
 
 
 def test_credentials_raises_exception():
@@ -106,6 +135,12 @@ CLOUDFLARE_AUTH_KEY = "bar"
     assert cfc.cloudflare_auth_key == 'bar'
 
 
+def test_cloudflare_raises_exception(config):
+    config.write('[foo]')
+    with pytest.raises(CredentialsException):
+        CloudFlareCredentials(config_path=str(config))
+
+
 def test_ssh_sets_options(config, private_key):
     config.write("""
 [ssh]
@@ -143,3 +178,8 @@ XFS1IpIg+KIzUDtmGDi5uIB4KTps3YmpF3iqCn6oQkQnFZBFBbY=
     assert c.public_key == """ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoOyFWOa7ySFOl17zFXLZbhsPgFxngjMvj8CgJQm/FW0VPXEsnuQb/xmiz/kMIzkurj5DVPe6Z2hPvE0Mny846geSFeUHUgad6CoNyIadkBJPHLR4eYtkPCsnqxZZ2HJKULPaBROVZ6ZuEeBDukUiUAq5SCa63ZM/+0OOk1PamsSJqtm1QSzwBykPqsNU7y6ve409ijkpO8Nt7vjsFjPoHwqzP0/PfbzkXUV6z84tDU97pX8XPyeaR7BP2MaZQzBJC3fdhc6XDLaNsq938mSFhaxGrLIrb31g/nuA+K18+smVq/G3wTlPDr8h/LZMKH0J8P9IpTjcgDB7pR8JAOJwP
 """
 
+
+def test_ssh_raises_exception(config):
+    config.write('[foo]')
+    with pytest.raises(CredentialsException):
+        SshCredentials(config_path=str(config))
