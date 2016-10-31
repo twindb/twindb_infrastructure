@@ -1,5 +1,3 @@
-boto3
-click
 pip
 bumpversion
 flake8

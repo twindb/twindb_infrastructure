@@ -9,6 +9,7 @@ import click
 from twindb_infrastructure.clogging import setup_logging
 from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
     ConfigException
+from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf
 
 
@@ -29,7 +30,9 @@ def parse_config(path):
 
 @click.group()
 @click.option('--config', default=TWINDB_INFRA_CONFIG,
-              help='Config file')
+              help='Config file',
+              show_default=True,
+              type=click.Path(exists=True))
 @click.option('--debug', is_flag=True, default=False,
               help='Print debug messages')
 def main(config, debug):
@@ -47,23 +50,23 @@ def main(config, debug):
 
 @main.command()
 @click.option('--tags', is_flag=True, help='Show instance tags')
-def show(tags):
+@click.argument('tags-filter', nargs=-1)
+def show(tags, tags_filter):
     """List TwinDB servers"""
 
     client = boto3.client('ec2')
     response = client.describe_instances()
     for reservation in response['Reservations']:
         for instance in reservation['Instances']:
+            if tags_filter \
+                    and \
+                    not TagSet(tags_filter).issubset(TagSet(instance['Tags'])):
+                continue
+
             printf('%s' % instance['InstanceId'])
 
             if tags:
-                printf(': ')
-                comma = ''
-                for tag in instance['Tags']:
-                    printf("%s%s=%s " % (comma, tag['Key'], tag['Value']))
-                    comma = ','
-
-            printf('\n')
+                printf(': %s\n', TagSet(instance['Tags']))
 
 
 @main.command()
