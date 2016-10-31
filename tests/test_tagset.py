@@ -64,6 +64,7 @@ def test_tagset_issubset():
     print(big_set)
     print(small_set)
     assert small_set.issubset(big_set)
+    assert not big_set.issubset(small_set)
 
 
 def test_tag_from_str():
@@ -81,3 +82,13 @@ def test_tagset_from_tuple():
             'Value': 'master'
         }
     ])
+
+
+def test_tag_raises_error():
+    with pytest.raises(TypeError):
+        Tag(tag=None)
+
+
+def test_find_returns_none():
+    ts = TagSet(['Name=foo'])
+    assert ts.find(Tag('Name=bar')) is None
