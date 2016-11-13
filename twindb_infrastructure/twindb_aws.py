@@ -67,6 +67,8 @@ def show(tags, tags_filter):
 
             if tags:
                 printf(': %s\n', TagSet(instance['Tags']))
+            else:
+                printf("\n")
 
 
 @main.command()
