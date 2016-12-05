@@ -6,7 +6,6 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import click
-from pprint import pprint
 from twindb_infrastructure.clogging import setup_logging
 from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
     ConfigException
@@ -67,7 +66,6 @@ def show(tags, verbose, tags_filter):
                 continue
 
             printf('%s' % instance['InstanceId'])
-            # pprint(instance)
             if verbose:
                 printf(' State: %s,' % instance['State']['Name'])
                 try:
@@ -78,7 +76,8 @@ def show(tags, verbose, tags_filter):
                     printf(' PrivateIP: %s,' % instance['PrivateIpAddress'])
                 except KeyError:
                     pass
-                printf(' AvailabilityZone: %s' % instance['Placement']['AvailabilityZone'])
+                printf(' AvailabilityZone: %s'
+                       % instance['Placement']['AvailabilityZone'])
 
             if tags:
                 printf(': %s\n', TagSet(instance['Tags']))
