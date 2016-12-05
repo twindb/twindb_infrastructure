@@ -6,6 +6,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import click
+from pprint import pprint
 from twindb_infrastructure.clogging import setup_logging
 from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
     ConfigException
@@ -50,8 +51,10 @@ def main(config, debug):
 
 @main.command()
 @click.option('--tags', is_flag=True, help='Show instance tags')
+@click.option('--verbose', is_flag=True,
+              help='Show more details about the instance')
 @click.argument('tags-filter', nargs=-1)
-def show(tags, tags_filter):
+def show(tags, verbose, tags_filter):
     """List TwinDB servers"""
 
     client = boto3.client('ec2')
@@ -64,6 +67,18 @@ def show(tags, tags_filter):
                 continue
 
             printf('%s' % instance['InstanceId'])
+            # pprint(instance)
+            if verbose:
+                printf(' State: %s,' % instance['State']['Name'])
+                try:
+                    printf(' PublicIP: %s,' % instance['PublicIpAddress'])
+                except KeyError:
+                    pass
+                try:
+                    printf(' PrivateIP: %s,' % instance['PrivateIpAddress'])
+                except KeyError:
+                    pass
+                printf(' AvailabilityZone: %s' % instance['Placement']['AvailabilityZone'])
 
             if tags:
                 printf(': %s\n', TagSet(instance['Tags']))
