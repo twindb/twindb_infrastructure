@@ -16,6 +16,7 @@ from twindb_infrastructure.util import printf
 class TwinDBInfraException(Exception):
     pass
 
+
 log = logging.getLogger(__name__)
 
 

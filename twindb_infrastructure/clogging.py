@@ -39,5 +39,6 @@ def clogging_main():
     logging.error('ERROR')
     logging.critical('CRITICAL')
 
+
 if __name__ == '__main__':
     clogging_main()

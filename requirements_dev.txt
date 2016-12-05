@@ -1,6 +1,6 @@
 pip
 bumpversion
-flake8
+flake8>=3.2.1
 tox
 coverage
 Sphinx
