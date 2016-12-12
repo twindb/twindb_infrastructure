@@ -1,3 +1,4 @@
+from ConfigParser import NoSectionError
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 from twindb_infrastructure.config.credentials import Credentials, \
     CredentialsException
@@ -10,10 +11,10 @@ class CloudFlareCredentials(Credentials):
 
     def __init__(self, config_path=TWINDB_INFRA_CONFIG):
         super(CloudFlareCredentials, self).__init__(config_path=config_path)
-        if not self.config.has_section('cloudflare'):
-            msg = 'There is no cloudflare section in config %s'\
-                  % self.config_path
-            raise CredentialsException(msg)
-        for option in self.config.options('cloudflare'):
-            value = self.config.get('cloudflare', option).strip('"\'')
-            setattr(self, option, value)
+        try:
+            for option in self.config.options('cloudflare'):
+                value = self.config.get('cloudflare', option).strip('"\'')
+                setattr(self, option, value)
+
+        except NoSectionError:
+            pass

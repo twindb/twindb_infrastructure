@@ -135,10 +135,9 @@ CLOUDFLARE_AUTH_KEY = "bar"
     assert cfc.cloudflare_auth_key == 'bar'
 
 
-def test_cloudflare_raises_exception(config):
+def test_cloudflare_no_exception(config):
     config.write('[foo]')
-    with pytest.raises(CredentialsException):
-        CloudFlareCredentials(config_path=str(config))
+    CloudFlareCredentials(config_path=str(config))
 
 
 def test_ssh_sets_options(config, private_key):

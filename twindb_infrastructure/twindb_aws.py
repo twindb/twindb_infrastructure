@@ -18,6 +18,19 @@ class TwinDBInfraException(Exception):
 
 
 log = logging.getLogger(__name__)
+CONFIG = None
+AWS_REGIONS = [
+    'us-east-1',
+    'us-east-2',
+    'us-west-1',
+    'us-west-2',
+    'ap-northeast-2',
+    'ap-southeast-1',
+    'ap-southeast-2',
+    'ap-northeast-1',
+    'eu-central-1',
+    'eu-west-1'
+]
 
 
 def parse_config(path):
@@ -40,10 +53,12 @@ def main(config, debug):
     """
     Console script to work with TwinDB Amazon Infrastructure
     """
+    global CONFIG
+
     setup_logging(log, debug=debug)
     log.debug('Using config %s' % config)
     try:
-        parse_config(config)
+        CONFIG = parse_config(config)
     except ConfigException as err:  # pragma: no cover
         log.error(err)
         exit(-1)
@@ -53,12 +68,19 @@ def main(config, debug):
 @click.option('--tags', is_flag=True, help='Show instance tags')
 @click.option('--verbose', is_flag=True,
               help='Show more details about the instance')
+@click.option('--region', type=click.Choice(AWS_REGIONS), help='AWS region name')
 @click.argument('tags-filter', nargs=-1)
-def show(tags, verbose, tags_filter):
+def show(tags, verbose, region, tags_filter):
     """List TwinDB servers"""
 
-    client = boto3.client('ec2')
+    if region:
+        region_name = region
+    else:
+        region_name = CONFIG.aws.aws_default_region
+
+    client = boto3.client('ec2', region_name=region_name)
     response = client.describe_instances()
+    log.debug('response = %r' % response)
     for reservation in response['Reservations']:
         for instance in reservation['Instances']:
             if tags_filter \
@@ -81,7 +103,12 @@ def show(tags, verbose, tags_filter):
                        % instance['Placement']['AvailabilityZone'])
 
             if tags:
-                printf(': %s\n', TagSet(instance['Tags']))
+                printf(': Tags: ')
+                try:
+                    printf('%s\n', TagSet(instance['Tags']))
+                except KeyError:
+                    printf("None\n")
+                    pass
             else:
                 printf("\n")
 
@@ -116,6 +143,19 @@ def stop(instance_id):
 @click.argument('instance-id')
 def start(instance_id):
     """Start Amazon instance"""
+
+    try:
+        ec2 = boto3.resource('ec2')
+        ec2.instances.filter(InstanceIds=[instance_id]).start()
+
+    except ClientError as err:
+        log.error(err)
+
+
+@main.command()
+@click.argument('instance-id')
+def launch(instance_id):
+    """Launch new Amazon instance"""
 
     try:
         ec2 = boto3.resource('ec2')
