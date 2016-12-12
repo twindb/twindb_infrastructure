@@ -2,13 +2,16 @@
 """
 TwinDB Amazon infrastructure
 """
-import logging
 import boto3
 from botocore.exceptions import ClientError
 import click
-from twindb_infrastructure.clogging import setup_logging
+import json
+from twindb_infrastructure import setup_logging
+from twindb_infrastructure import log
 from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
     ConfigException
+from twindb_infrastructure.providers.aws import AWS_REGIONS, launch_ec2_instance, \
+    get_instance_private_ip
 from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf
 
@@ -16,21 +19,7 @@ from twindb_infrastructure.util import printf
 class TwinDBInfraException(Exception):
     pass
 
-
-log = logging.getLogger(__name__)
 CONFIG = None
-AWS_REGIONS = [
-    'us-east-1',
-    'us-east-2',
-    'us-west-1',
-    'us-west-2',
-    'ap-northeast-2',
-    'ap-southeast-1',
-    'ap-southeast-2',
-    'ap-northeast-1',
-    'eu-central-1',
-    'eu-west-1'
-]
 
 
 def parse_config(path):
@@ -68,7 +57,8 @@ def main(config, debug):
 @click.option('--tags', is_flag=True, help='Show instance tags')
 @click.option('--verbose', is_flag=True,
               help='Show more details about the instance')
-@click.option('--region', type=click.Choice(AWS_REGIONS), help='AWS region name')
+@click.option('--region', type=click.Choice(AWS_REGIONS),
+              help='AWS region name')
 @click.argument('tags-filter', nargs=-1)
 def show(tags, verbose, region, tags_filter):
     """List TwinDB servers"""
@@ -153,13 +143,29 @@ def start(instance_id):
 
 
 @main.command()
-@click.argument('instance-id')
-def launch(instance_id):
+@click.argument('template')
+def launch(template):
     """Launch new Amazon instance"""
 
-    try:
-        ec2 = boto3.resource('ec2')
-        ec2.instances.filter(InstanceIds=[instance_id]).start()
+    log.info("Starting instance")
+    with open(template) as fp:
+        instance_profile = json.loads(fp.read())
 
-    except ClientError as err:
-        log.error(err)
+        aws_access_key_id = CONFIG.aws.aws_access_key_id
+        aws_secret_access_key = CONFIG.aws.aws_secret_access_key
+        private_key_file = CONFIG.ssh.private_key_file
+        instance_id = \
+            launch_ec2_instance(instance_profile,
+                                region=instance_profile['Region'],
+                                aws_access_key_id=aws_access_key_id,
+                                aws_secret_access_key=aws_secret_access_key,
+                                private_key_file=private_key_file)
+
+        if not instance_id:
+            log.error("Failed to launch EC2 instance")
+            exit(-1)
+
+        log.info("Launched instance %s" % instance_id)
+
+        ip = get_instance_private_ip(instance_id)
+        log.info('Instance %s on %s' % (instance_id, ip))
