@@ -31,8 +31,9 @@ setup(
                  'twindb_infrastructure'},
     entry_points={
         'console_scripts': [
-            'twindb_aws=twindb_infrastructure.twindb_aws:main',
-            'twindb_chef=twindb_infrastructure.twindb_chef:main'
+            'twindb-aws=twindb_infrastructure.twindb_aws:main',
+            'twindb-chef=twindb_infrastructure.twindb_chef:main',
+            'twindb-galera=twindb_infrastructure.twindb_galera:main'
         ]
     },
     include_package_data=True,

@@ -13,22 +13,11 @@ from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
 from twindb_infrastructure.providers.aws import AWS_REGIONS, launch_ec2_instance, \
     get_instance_private_ip
 from twindb_infrastructure.tagset import TagSet
-from twindb_infrastructure.util import printf
+from twindb_infrastructure.util import printf, parse_config
 
 
 class TwinDBInfraException(Exception):
     pass
-
-CONFIG = None
-
-
-def parse_config(path):
-    """Parse TwinDB Infrastructure config
-
-    :param path: path to config file
-    :raise ConfigException if config can't be parsed
-    """
-    return Config(path)
 
 
 @click.group()
@@ -79,7 +68,18 @@ def show(tags, verbose, region, tags_filter):
                 continue
 
             printf('%s' % instance['InstanceId'])
+
+            if tags:
+                printf(': Tags: ')
+                try:
+                    printf('%s', TagSet(instance['Tags']))
+                except KeyError:
+                    printf("None")
+                    pass
+
             if verbose:
+                if tags:
+                    printf(",")
                 printf(' State: %s,' % instance['State']['Name'])
                 try:
                     printf(' PublicIP: %s,' % instance['PublicIpAddress'])
@@ -92,15 +92,7 @@ def show(tags, verbose, region, tags_filter):
                 printf(' AvailabilityZone: %s'
                        % instance['Placement']['AvailabilityZone'])
 
-            if tags:
-                printf(': Tags: ')
-                try:
-                    printf('%s\n', TagSet(instance['Tags']))
-                except KeyError:
-                    printf("None\n")
-                    pass
-            else:
-                printf("\n")
+            printf("\n")
 
 
 @main.command()

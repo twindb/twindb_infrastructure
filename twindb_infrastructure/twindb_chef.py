@@ -4,7 +4,7 @@ import os
 from twindb_infrastructure import setup_logging, log
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 from twindb_infrastructure.config.config import ConfigException
-from twindb_infrastructure.twindb_aws import parse_config
+from twindb_infrastructure.util import parse_config
 
 
 @click.group()
