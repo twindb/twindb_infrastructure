@@ -1,5 +1,6 @@
 import click
 from subprocess import Popen
+import json
 import os
 from twindb_infrastructure import setup_logging, log
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
@@ -34,9 +35,11 @@ def main(config, debug):
               help='The node is a cluster founder')
 @click.option('--recipe',
               help='Chef recipe to run')
+@click.option('--cluster-name', help='Galer cluster name',
+              default='PXC', show_default=True)
 @click.argument('ip')
 @click.argument('node_name')
-def bootstrap(founder, recipe, ip, node_name):
+def bootstrap(founder, recipe, cluster_name, ip, node_name):
     """Run chef client on the server"""
     cmd = [
         'knife',
@@ -48,11 +51,19 @@ def bootstrap(founder, recipe, ip, node_name):
         '--secret-file',
         os.path.expanduser('~/.chef/encrypted_data_bag_secret'),
         '--environment', 'staging',
-        '--run-list', 'role[%s]' % recipe
+        '--run-list', "role[base],recipe[%s]" % recipe
         ]
-    if founder:
-        cmd.append('--json-attributes')
-        cmd.append('{ "percona": { "cluster": { "founder": true } } }')
+    attributes = {
+        "percona": {
+            "cluster": {
+                "wsrep_cluster_name": cluster_name,
+                "founder": founder
+            }
+        }
+    }
 
+    cmd.append('--json-attributes')
+    cmd.append(json.dumps(attributes))
+    log.debug('Executing %s' % ' '.join(cmd))
     proc = Popen(cmd)
     proc.communicate()

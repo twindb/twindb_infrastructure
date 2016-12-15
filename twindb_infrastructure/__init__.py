@@ -22,7 +22,8 @@ def setup_logging(logger, debug=False):
         logging.ERROR: (None, 'red', False),
         logging.CRITICAL: ('red', 'white', True),
     }
-    console_handler = ColorizingStreamHandler()
+    #console_handler = ColorizingStreamHandler()
+    console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter(fmt_str))
     logger.handlers = []
     logger.addHandler(console_handler)

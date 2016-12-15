@@ -96,10 +96,13 @@ def launch_ec2_instance(instance_profile,
            "--instance-type", instance_profile['InstanceType'],
            "--key-name", instance_profile['KeyName'],
            "--security-group-ids", instance_profile['SecurityGroupId'],
-           "--subnet-id", instance_profile["SubnetId"],
-           #  "--disable-api-termination",
-           "--block-device-mappings"
+           "--subnet-id", instance_profile["SubnetId"]
+           #  "--disable-api-termination"
            ]
+    if "EbsOptimized" and instance_profile["EbsOptimized"]:
+        cmd.append('--ebs-optimized')
+
+    cmd.append('--block-device-mappings')
     device_mappings = [
         {
             "DeviceName": "/dev/sda1",
@@ -135,6 +138,7 @@ def launch_ec2_instance(instance_profile,
     cout, cerr = aws_process.communicate()
 
     if aws_process.returncode != 0:
+        log.error('Failed to execute %s' % ' '.join(cmd))
         log.error(cerr)
         return None
 

@@ -1,9 +1,12 @@
 import click
+from subprocess import Popen
 from twindb_infrastructure import setup_logging
 from twindb_infrastructure import log
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 from twindb_infrastructure.config.config import ConfigException
-from twindb_infrastructure.util import parse_config
+from twindb_infrastructure.util import parse_config, stop_chef_client, \
+    start_chef_client, stop_galera, start_galera, remote_rmdir, remote_restore, \
+    bootstrap_first_node, bootstrap_next_node
 
 
 @click.group()
@@ -39,4 +42,24 @@ def main(config, debug):
                    'Multiple options are allowed')
 def cluster(backup_copy, datadir, founder, node):
     """Bootstrap xtradb cluster"""
-    pass
+    if backup_copy:
+        all_nodes = list(node) + [founder]
+        stop_chef_client(all_nodes)
+        stop_galera(all_nodes)
+        remote_rmdir(datadir, all_nodes)
+
+        remote_restore(founder, backup_copy, datadir)
+        bootstrap_first_node(founder, datadir)
+        bootstrap_next_node(node[0], datadir)
+        # for n in node:
+        #    bootstrap_next_node(n, datadir)
+        # start_chef_client(all_nodes)
+        pass
+    else:
+        log.info('No backup copy specified. Choose one from below:')
+        proc = Popen(['twindb-backup', 'ls'])
+        proc.communicate()
+
+
+
+
