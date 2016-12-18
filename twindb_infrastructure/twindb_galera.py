@@ -5,7 +5,7 @@ from twindb_infrastructure import log
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 from twindb_infrastructure.config.config import ConfigException
 from twindb_infrastructure.util import parse_config, stop_chef_client, \
-    start_chef_client, stop_galera, start_galera, remote_rmdir, remote_restore, \
+    stop_galera, remote_rmdir, remote_restore, \
     bootstrap_first_node, bootstrap_next_node
 
 
@@ -59,7 +59,3 @@ def cluster(backup_copy, datadir, founder, node):
         log.info('No backup copy specified. Choose one from below:')
         proc = Popen(['twindb-backup', 'ls'])
         proc.communicate()
-
-
-
-

@@ -1,29 +1,9 @@
 import json
-import logging
-from pprint import pprint
 from subprocess import Popen, PIPE
-from credentials.cloudflare import CLOUDFLARE_EMAIL, CLOUDFLARE_AUTH_KEY
-from providers.clogging import ColorizingStreamHandler
+from twindb_infrastructure import log
 
-__author__ = 'aleks'
-
-Log = logging.getLogger(name=__name__)
-
-
-def setup_logging(logger, debug=False):
-
-    fmt_str = "%(asctime)s: %(levelname)s: %(module)s.%(funcName)s():%(lineno)d: %(message)s"
-
-    console_handler = ColorizingStreamHandler()
-    console_handler.setFormatter(logging.Formatter(fmt_str))
-    logger.handlers = []
-    logger.addHandler(console_handler)
-    if debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
-setup_logging(Log)
+CLOUDFLARE_EMAIL = ""
+CLOUDFLARE_AUTH_KEY = ""
 
 
 def cf_api_call(url, method="GET", data=None):
@@ -38,25 +18,25 @@ def cf_api_call(url, method="GET", data=None):
         cmd.append("--data")
         cmd.append(data)
     try:
-        Log.debug("Executing: %r" % cmd)
+        log.debug("Executing: %r" % cmd)
         cf_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
         cout, cerr = cf_process.communicate()
 
         if cf_process.returncode != 0:
-            Log.error(cerr)
+            log.error(cerr)
             return None
 
         try:
-            Log.debug(cout)
+            log.debug(cout)
             return json.loads(cout)
 
         except ValueError as err:
-            Log.error(err)
-            Log.error(cerr)
+            log.error(err)
+            log.error(cerr)
             return None
 
     except OSError as err:
-        Log.error(err)
+        log.error(err)
         return None
 
 
@@ -97,7 +77,7 @@ def update_dns_record(name, zone, ip, record_type="A", ttl=1):
 
     if not response["success"]:
         for error in response["errors"]:
-            Log.error("Error(%d): %s" % (error["code"], error["message"]))
+            log.error("Error(%d): %s" % (error["code"], error["message"]))
 
     return bool(response["success"])
 
@@ -121,7 +101,7 @@ def create_dns_record(name, zone, content, data=None, record_type="A", ttl=1):
 
     if not response["success"]:
         for error in response["errors"]:
-            Log.error("Error(%d): %s" % (error["code"], error["message"]))
+            log.error("Error(%d): %s" % (error["code"], error["message"]))
 
     return bool(response["success"])
 
@@ -137,6 +117,6 @@ def delete_dns_record(name, zone):
 
     if not response["success"]:
         for error in response["errors"]:
-            Log.error("Error(%d): %s" % (error["code"], error["message"]))
+            log.error("Error(%d): %s" % (error["code"], error["message"]))
 
     return bool(response["success"])

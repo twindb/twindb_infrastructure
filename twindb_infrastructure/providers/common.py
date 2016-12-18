@@ -7,7 +7,8 @@ from twindb_infrastructure import log
 def run_command(command):
     log.debug("Executing: %r" % command)
     try:
-        process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+        process = subprocess.Popen(shlex.split(command),
+                                   stdout=subprocess.PIPE)
         while True:
             output = process.stdout.readline()
             if output == '' and process.poll() is not None:
@@ -33,7 +34,8 @@ def disable_selinux(ip, username, key):
                       "-l", username,
                       ip,
                       "sudo"]
-        cmd = cmd_common + ["sed", "-i", "s/SELINUX=enforcing/SELINUX=disabled/",
+        cmd = cmd_common + ["sed", "-i",
+                            "s/SELINUX=enforcing/SELINUX=disabled/",
                             "/etc/selinux/config", "/etc/sysconfig/selinux"]
         log.debug("Executing: %r" % cmd)
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)

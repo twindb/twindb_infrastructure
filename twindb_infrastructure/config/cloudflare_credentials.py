@@ -1,7 +1,6 @@
 from ConfigParser import NoSectionError
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
-from twindb_infrastructure.config.credentials import Credentials, \
-    CredentialsException
+from twindb_infrastructure.config.credentials import Credentials
 
 
 class CloudFlareCredentials(Credentials):

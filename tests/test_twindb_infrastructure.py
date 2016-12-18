@@ -13,9 +13,7 @@ from click.testing import CliRunner
 import mock
 import pytest
 
-from twindb_infrastructure import cli
-from twindb_infrastructure import clogging
-from twindb_infrastructure.clogging import setup_logging
+from twindb_infrastructure import cli, setup_logging
 from twindb_infrastructure.util import printf
 
 
@@ -50,13 +48,3 @@ def test_setup_logging(debug, level):
     logger = logging.getLogger(__name__)
     setup_logging(logger, debug=debug)
     assert logger.level == level
-
-
-def test_clogging_main(capsys):
-    clogging.clogging_main()
-    out, err = capsys.readouterr()
-    assert err.find('DEBUG: clogging.main()')
-    assert err.find('INFO: clogging.clogging_main()')
-    assert err.find('WARNING: clogging.clogging_main()')
-    assert err.find('ERROR: clogging.clogging_main()')
-    assert err.find('CRITICAL: clogging.clogging_main()')

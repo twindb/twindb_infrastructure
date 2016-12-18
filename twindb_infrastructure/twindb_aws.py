@@ -8,10 +8,10 @@ import click
 import json
 from twindb_infrastructure import setup_logging
 from twindb_infrastructure import log
-from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, Config, \
+from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, \
     ConfigException
-from twindb_infrastructure.providers.aws import AWS_REGIONS, launch_ec2_instance, \
-    get_instance_private_ip
+from twindb_infrastructure.providers.aws import AWS_REGIONS, \
+    launch_ec2_instance, get_instance_private_ip
 from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf, parse_config
 
