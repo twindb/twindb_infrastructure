@@ -30,6 +30,23 @@ def main(config, debug):
         exit(-1)
 
 
+def get_mounts_from_template(instance_profile):
+    mounts = {}
+    if not instance_profile \
+            or "BlockDeviceMappings" not in instance_profile:
+        return mounts
+
+    for volume in instance_profile['BlockDeviceMappings']:
+        key = volume['MountPoint'].replace('/', '_').lstrip('_')
+        mounts[key] = {
+            "device": volume['DeviceName'],
+            "type": "xfs",
+            "opts": "rw,relatime,attr2,inode64,noquota,noatime",
+            "mount_point": volume['MountPoint']
+        }
+    return mounts
+
+
 @main.command()
 @click.option('--founder', default=False, is_flag=True,
               help='The node is a cluster founder')
@@ -37,13 +54,28 @@ def main(config, debug):
               help='Chef recipe to run')
 @click.option('--cluster-name', help='Galer cluster name',
               default='PXC', show_default=True)
+@click.option('--template', help='Instance profile')
 @click.argument('ip')
-@click.argument('node_name')
-def bootstrap(founder, recipe, cluster_name, ip, node_name):
+@click.argument('node_name', required=False)
+def bootstrap(founder, recipe, cluster_name, template, ip, node_name):
     """Run chef client on the server"""
+    log.debug('node_name = %s' % node_name)
+    node = None
+
+    if node_name:
+        node = node_name
+    elif template:
+        with open(template) as fp:
+            instance_profile = json.loads(fp.read())
+            node = instance_profile["Name"]
+    if not node:
+        log.error("If node_name agrument is not given "
+                  "you must specify --template.")
+        exit(1)
+
     cmd = [
         'knife',
-        'bootstrap', ip, '--node-name', node_name,
+        'bootstrap', ip, '--node-name', node,
         '--yes',
         '--ssh-user', 'centos', '--sudo',
         '--ssh-identity-file',
@@ -61,6 +93,15 @@ def bootstrap(founder, recipe, cluster_name, ip, node_name):
             }
         }
     }
+    if template:
+        with open(template) as fp:
+            instance_profile = json.loads(fp.read())
+            mounts = get_mounts_from_template(instance_profile)
+
+            if mounts:
+                attributes["fb_fstab"] = {
+                    "mounts": mounts
+                }
 
     cmd.append('--json-attributes')
     cmd.append(json.dumps(attributes))
