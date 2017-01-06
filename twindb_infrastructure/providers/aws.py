@@ -1,6 +1,9 @@
 import json
 from subprocess import Popen, PIPE, call
 import time
+
+import os
+
 from twindb_infrastructure import log
 from twindb_infrastructure.providers.common import wait_sshd
 
@@ -113,34 +116,51 @@ def launch_ec2_instance(instance_profile,
             }
         }
     ]
-    for volume in instance_profile['BlockDeviceMappings']:
-        ebs = {
-            "VolumeSize": volume['VolumeSize'],
-            "DeleteOnTermination": True,
-            "VolumeType": volume['VolumeType']
-        }
-        if 'Iops' in volume:
-            ebs['Iops'] = volume['Iops']
 
-        device_mappings.append({
-            "DeviceName": volume['DeviceName'],
-            "Ebs": ebs
-        })
+    try:
+        for volume in instance_profile['BlockDeviceMappings']:
+            ebs = {
+                "VolumeSize": volume['VolumeSize'],
+                "DeleteOnTermination": True,
+                "VolumeType": volume['VolumeType']
+            }
+            if 'Iops' in volume:
+                ebs['Iops'] = volume['Iops']
+
+            device_mappings.append({
+                "DeviceName": volume['DeviceName'],
+                "Ebs": ebs
+            })
+    except KeyError:
+        pass
+
     cmd.append(json.dumps(device_mappings))
 
-    log.debug("Executing: %r" % cmd)
+    log.debug("Executing: %s" % ' '.join(cmd))
     aws_env = {
         'AWS_ACCESS_KEY_ID': aws_access_key_id,
         'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
-        'AWS_DEFAULT_REGION': region
+        'AWS_DEFAULT_REGION': region,
+        'PATH': os.environ['PATH'],
+        'LC_ALL': 'en_US.UTF-8',
+        'LC_CTYPE': 'UTF-8',
+        'LANG': 'en_US'
     }
-    aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=aws_env)
-    cout, cerr = aws_process.communicate()
+    cout, cerr = None, None
+    try:
+        aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=aws_env)
+        cout, cerr = aws_process.communicate()
 
-    if aws_process.returncode != 0:
-        log.error('Failed to execute %s' % ' '.join(cmd))
-        log.error(cerr)
-        return None
+        if aws_process.returncode != 0:
+            log.error('Failed to execute %s' % ' '.join(cmd))
+            # log.debug(cerr)
+            print(cerr)
+            return None
+
+    except OSError as err:
+        log.error('Failed to execute %r' % cmd)
+        log.error(err)
+        exit(-1)
 
     try:
         response = json.loads(cout)
@@ -171,9 +191,8 @@ def launch_ec2_instance(instance_profile,
                 return None
 
         # Wait will sshd is up
-        if "PublicIP" in instance_profile:
-            ip = get_instance_public_ip(instance_id)
-        else:
+        ip = get_instance_public_ip(instance_id)
+        if not ip:
             ip = get_instance_private_ip(instance_id)
 
         username = instance_profile["UserName"]
