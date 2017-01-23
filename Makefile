@@ -50,19 +50,20 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 twindb_infrastructure tests
 
-test: ## run tests quickly with the default Python
+bootstrap:
+	pip install -e .
+	pip install -r requirements_dev.txt
+
+test: bootstrap ## run tests quickly with the default Python
 	py.test
-	
+
 
 test-all: ## run tests on every Python version with tox
 	tox
 
-coverage: ## check code coverage quickly with the default Python
-	coverage run --source twindb_infrastructure py.test
-	
-		coverage report -m
-		coverage html
-		$(BROWSER) htmlcov/index.html
+coverage: bootstrap ## check code coverage quickly with the default Python
+	pytest --cov=./twindb_infrastructure
+
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/twindb_infrastructure.rst

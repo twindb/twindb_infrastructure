@@ -7,3 +7,5 @@ Sphinx
 PyYAML
 pytest
 mock
+codecov
+pytest-cov

@@ -15,7 +15,9 @@ env:
 - TOXENV=pypy
 - TOXENV=flake8
 - TOXENV=cov
-install: pip install -U tox
+install: pip install -U -rrequirements_dev.txt
 language: python
 python: 2.7
-script: tox -e ${TOXENV}
+script:
+ - tox -e ${TOXENV}
+ - codecov
