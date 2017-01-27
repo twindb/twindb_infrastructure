@@ -1,6 +1,6 @@
 import click
 from subprocess import Popen
-from twindb_infrastructure import setup_logging
+from twindb_infrastructure import setup_logging, __version__
 from twindb_infrastructure import log
 from twindb_infrastructure.config import TWINDB_INFRA_CONFIG
 from twindb_infrastructure.config.config import ConfigException
@@ -9,18 +9,30 @@ from twindb_infrastructure.util import parse_config, stop_chef_client, \
     bootstrap_first_node, bootstrap_next_node
 
 
-@click.group()
+CONFIG = None
+
+
+@click.group(invoke_without_command=True)
 @click.option('--config', default=TWINDB_INFRA_CONFIG,
               help='Config file',
               show_default=True,
-              type=click.Path(exists=True))
+              type=click.Path())
 @click.option('--debug', is_flag=True, default=False,
               help='Print debug messages')
-def main(config, debug):
+@click.option('--version', help='Show tool version and exit.', is_flag=True,
+              default=False)
+@click.pass_context
+def main(ctx, config, debug, version):
     """
     Console script to work with Galera
     """
     global CONFIG
+    if not ctx.invoked_subcommand:
+        if version:
+            print(__version__)
+        else:
+            print(ctx.get_help())
+        return 0
 
     setup_logging(log, debug=debug)
     log.debug('Using config %s' % config)

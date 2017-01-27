@@ -1,6 +1,15 @@
 import json
 import pytest
+from click.testing import CliRunner
+
+from twindb_infrastructure import twindb_chef
 from twindb_infrastructure.twindb_chef import get_mounts_from_template
+
+
+def test_main():
+    runner = CliRunner()
+    result = runner.invoke(twindb_chef.main)
+    assert result.exit_code == 0
 
 
 @pytest.mark.parametrize('instance_profile, mounts', [
