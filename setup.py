@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from pip.req import parse_requirements
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -11,16 +11,15 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'Click>=6.0',
-    'boto3'
+    'boto3', 'logutils', 'pip'
 ]
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+test_requirements = [str(ir.req) for ir in
+                     parse_requirements('requirements_dev.txt', session=False)]
 
 setup(
     name='twindb-infrastructure',
-    version='0.1.3',
+    version='1.0.0',
     description="TwinDB Infrastructure is a collection of everything"
                 " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
@@ -32,7 +31,9 @@ setup(
                  'twindb_infrastructure'},
     entry_points={
         'console_scripts': [
-            'twindb_aws=twindb_infrastructure.twindb_aws:main'
+            'twindb-aws=twindb_infrastructure.twindb_aws:main',
+            'twindb-chef=twindb_infrastructure.twindb_chef:main',
+            'twindb-galera=twindb_infrastructure.twindb_galera:main'
         ]
     },
     include_package_data=True,
