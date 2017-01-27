@@ -19,7 +19,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='twindb-infrastructure',
-    version='0.1.3',
+    version='1.0.0',
     description="TwinDB Infrastructure is a collection of everything"
                 " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
