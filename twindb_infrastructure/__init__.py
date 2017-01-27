@@ -6,7 +6,7 @@ from logutils.colorize import ColorizingStreamHandler
 
 __author__ = 'TwinDB Development Team'
 __email__ = 'dev@twindb.com'
-__version__ = '0.1.3'
+__version__ = '1.0.0'
 
 log = logging.getLogger(__name__)
 
