@@ -101,7 +101,8 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
 
     if instance_profile.get('AvailabilityZone'):
         cmd.append('--placement')
-        cmd.append('AvailabilityZone=%s' % instance_profile['AvailabilityZone'])
+        cmd.append('AvailabilityZone=%s' %
+                   instance_profile['AvailabilityZone'])
 
     if instance_profile.get('EbsOptimized', False):
         cmd.append('--ebs-optimized')
