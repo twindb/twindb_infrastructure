@@ -193,9 +193,7 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
                 return None
 
         # Wait will sshd is up
-        ip = get_instance_public_ip(instance_id)
-        if not ip:
-            ip = get_instance_private_ip(instance_id)
+        ip = get_instance_private_ip(instance_id)
 
         username = instance_profile["UserName"]
         if not wait_sshd(ip, private_key_file, username):
