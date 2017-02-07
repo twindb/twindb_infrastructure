@@ -22,10 +22,12 @@ AWS_REGIONS = [
 
 
 def ec2_describe_instance(instance_id):
-    cmd = ["aws", "ec2", "describe-instances",
-           "--output", "json",
-           "--instance-ids", instance_id
-           ]
+    cmd = [
+        "aws", "ec2", "describe-instances",
+        "--output", "json",
+        "--instance-ids", instance_id
+    ]
+
     try:
         log.debug("Executing: %r" % cmd)
         aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -37,72 +39,72 @@ def ec2_describe_instance(instance_id):
 
         try:
             return json.loads(cout)
-
         except ValueError as err:
             log.error(err)
             log.error(cerr)
             return None
-
     except OSError as err:
         log.error(err)
         return None
 
 
 def get_instance_state(instance_id):
-
     response = ec2_describe_instance(instance_id)
 
     try:
         state = response["Reservations"][0]["Instances"][0]["State"]["Name"]
         log.debug("Instance: %s, State: %s" % (instance_id, state))
         return state
-
     except ValueError as err:
         log.error(err)
         return None
 
 
 def get_instance_private_ip(instance_id):
-
     response = ec2_describe_instance(instance_id)
 
     try:
-        ip = response["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
-        return ip
-
+        return response["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
     except ValueError as err:
         log.error(err)
         return None
 
 
 def get_instance_public_ip(instance_id):
-
     response = ec2_describe_instance(instance_id)
 
     try:
-        ip = response["Reservations"][0]["Instances"][0]["PublicIpAddress"]
-        return ip
-
+        return response["Reservations"][0]["Instances"][0]["PublicIpAddress"]
     except ValueError as err:
         log.error(err)
         return None
 
 
-def launch_ec2_instance(instance_profile,
-                        region=AWS_REGIONS[0],
-                        aws_access_key_id=None,
-                        aws_secret_access_key=None,
+def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
+                        aws_access_key_id=None, aws_secret_access_key=None,
                         private_key_file=None):
-    cmd = ["aws", "ec2", "run-instances",
-           "--output", "json",
-           "--image-id", instance_profile['ImageId'],
-           "--instance-type", instance_profile['InstanceType'],
-           "--key-name", instance_profile['KeyName'],
-           "--security-group-ids", instance_profile['SecurityGroupId'],
-           "--subnet-id", instance_profile["SubnetId"]
-           #  "--disable-api-termination"
-           ]
-    if "EbsOptimized" and instance_profile["EbsOptimized"]:
+    cmd = [
+        "aws", "ec2", "run-instances",
+        "--output", "json",
+        "--image-id", instance_profile['ImageId'],
+        "--instance-type", instance_profile['InstanceType'],
+        "--key-name", instance_profile['KeyName'],
+        "--subnet-id", instance_profile["SubnetId"]
+    ]
+
+    # Add the security group IDs to the command in the form
+    # "string" "string" ...
+    security_group_ids = list(instance_profile['SecurityGroupId'])
+    cmd.append("--security-group-ids")
+    for group_id in security_group_ids:
+        cmd.append(group_id)
+
+    if instance_profile.get('AvailabilityZone'):
+        cmd.append('--placement')
+        cmd.append('AvailabilityZone=%s' %
+                   instance_profile['AvailabilityZone'])
+
+    if instance_profile.get('EbsOptimized', False):
         cmd.append('--ebs-optimized')
 
     cmd.append('--block-device-mappings')
@@ -146,6 +148,7 @@ def launch_ec2_instance(instance_profile,
         'LC_CTYPE': 'UTF-8',
         'LANG': 'en_US'
     }
+
     cout, cerr = None, None
     try:
         aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=aws_env)
@@ -153,10 +156,8 @@ def launch_ec2_instance(instance_profile,
 
         if aws_process.returncode != 0:
             log.error('Failed to execute %s' % ' '.join(cmd))
-            # log.debug(cerr)
-            print(cerr)
+            log.error(cerr)
             return None
-
     except OSError as err:
         log.error('Failed to execute %r' % cmd)
         log.error(err)
@@ -171,6 +172,7 @@ def launch_ec2_instance(instance_profile,
         log.info("Waiting till the instance starts")
         while get_instance_state(instance_id) != "running":
             log.info("Waiting %d more seconds" % timeout)
+
             time.sleep(3)
             timeout -= 3
             if timeout == 0:
@@ -196,16 +198,13 @@ def launch_ec2_instance(instance_profile,
             ip = get_instance_private_ip(instance_id)
 
         username = instance_profile["UserName"]
-        if not wait_sshd(ip,
-                         private_key_file,
-                         username):
+        if not wait_sshd(ip, private_key_file, username):
             return None
 
         if 'BlockDeviceMappings' in instance_profile:
             mount_volumes(ip, private_key_file, username,
                           volumes=instance_profile['BlockDeviceMappings'])
         return instance_id
-
     except OSError as err:
         log.error(err)
         return None
