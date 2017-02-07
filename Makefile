@@ -26,8 +26,19 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+.PHONY: virtualenv
+virtualenv: ## create virtual environment typically used for development purposes
+	virtualenv env --setuptools --prompt='(twindb_infrastructure)'
 
+.PHONY: bootstrap
+bootstrap: ## bootstrap the development environment
+	pip install -U "setuptools==32.3.1"
+	pip install -U "pip==9.0.1"
+	pip install -U "pip-tools>=1.6.0"
+	pip install --editable .
+	pip install -r requirements_dev.txt
+
+clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -50,20 +61,14 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 twindb_infrastructure tests
 
-bootstrap:
-	pip install -e .
-	pip install -r requirements_dev.txt
-
 test: bootstrap ## run tests quickly with the default Python
 	py.test
-
 
 test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: bootstrap ## check code coverage quickly with the default Python
 	pytest --cov=./twindb_infrastructure
-
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/twindb_infrastructure.rst
