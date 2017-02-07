@@ -69,7 +69,7 @@ def test_config_init(mock_cf, mock_ssh, mock_aws, config):
 @mock.patch.object(AwsCredentials, '__init__')
 @mock.patch.object(SshCredentials, '__init__')
 @mock.patch.object(CloudFlareCredentials, '__init__')
-def test_config_init(mock_cf, mock_ssh, mock_aws, config):
+def test_config_init_credentials_exception(mock_cf, mock_ssh, mock_aws, config):
     mock_aws.return_value = None
     mock_ssh.return_value = None
     mock_cf.side_effect = CredentialsException
