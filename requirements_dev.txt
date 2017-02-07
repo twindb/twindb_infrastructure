@@ -9,7 +9,6 @@ pytest-mock
 tox
 coverage
 Sphinx
-cryptography
 PyYAML
 unittest2
 codecov
