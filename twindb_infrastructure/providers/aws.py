@@ -286,3 +286,18 @@ def mount_volumes(ip, key_file, username, volumes=None):
               % (volume['MountPoint'],
                  volume['DeviceName'],
                  volume['MountPoint'])])
+
+
+def start(instance_id):
+    """Start Amazon instance"""
+    pass
+
+
+def terminate(instance_id):
+    """Terminate Amazon instance"""
+    pass
+
+
+def stop(instance_id):
+    """Stop Amazon instance"""
+    pass
