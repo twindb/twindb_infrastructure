@@ -288,16 +288,37 @@ def mount_volumes(ip, key_file, username, volumes=None):
                  volume['MountPoint'])])
 
 
-def start(instance_id):
-    """Start Amazon instance"""
+def start_instance(instance_id):
+    """
+    Start Amazon instance
+
+
+    :param instance_id: id of instance for run
+    :type instance_id: str
+    :return: None
+    """
     pass
 
 
-def terminate(instance_id):
-    """Terminate Amazon instance"""
+def terminate_instance(instance_id):
+    """
+    Terminate Amazon instance
+
+
+    :param instance_id: id of instance for terminate
+    :type instance_id: str
+    :return: None
+    """
     pass
 
 
-def stop(instance_id):
-    """Stop Amazon instance"""
+def stop_instance(instance_id):
+    """
+    Stop Amazon instance
+
+
+    :param instance_id: id of instance for stop
+    :type instance_id: str
+    :return: None
+    """
     pass
