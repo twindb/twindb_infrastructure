@@ -295,7 +295,8 @@ def start_instance(instance_id):
 
     :param instance_id: id of instance for run
     :type instance_id: str
-    :return: None
+    :return: Result of start
+    :rtype: bool
     """
     pass
 
@@ -307,7 +308,8 @@ def terminate_instance(instance_id):
 
     :param instance_id: id of instance for terminate
     :type instance_id: str
-    :return: None
+    :return: Result of terminate
+    :rtype: bool
     """
     pass
 
@@ -319,6 +321,7 @@ def stop_instance(instance_id):
 
     :param instance_id: id of instance for stop
     :type instance_id: str
-    :return: None
+    :return: Result of stop
+    :rtype: bool
     """
     pass
