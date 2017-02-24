@@ -4,6 +4,8 @@ import time
 
 import os
 
+import boto3
+
 from twindb_infrastructure import log
 from twindb_infrastructure.providers.common import wait_sshd
 
@@ -298,7 +300,10 @@ def start_instance(instance_id):
     :return: Result of start
     :rtype: bool
     """
-    pass
+    ec2 = boto3.resource('ec2')
+    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    response = instance.start()
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
 
 
 def terminate_instance(instance_id):
@@ -311,7 +316,10 @@ def terminate_instance(instance_id):
     :return: Result of terminate
     :rtype: bool
     """
-    pass
+    ec2 = boto3.resource('ec2')
+    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    response = instance.terminate()
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
 
 
 def stop_instance(instance_id):
@@ -324,4 +332,7 @@ def stop_instance(instance_id):
     :return: Result of stop
     :rtype: bool
     """
-    pass
+    ec2 = boto3.resource('ec2')
+    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    response = instance.stop()
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
