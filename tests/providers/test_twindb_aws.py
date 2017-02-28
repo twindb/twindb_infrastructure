@@ -1,3 +1,5 @@
+from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
+from botocore.exceptions import ClientError
 from click.testing import CliRunner
 import mock
 import pytest
@@ -118,3 +120,45 @@ def test_stop_instance(mock_boto3, response, expected_code):
     mock_boto3.resource.assert_called_once_with('ec2')
     mock_ec2.instances.filter.assert_called_once_with(InstanceIds=['foo-bar'])
     mock_instance.stop.assert_called_once()
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_start_instance_exception(mock_boto3):
+    mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
+    assert not start_instance('foo-bar')
+    mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
+    assert not start_instance('foo-bar')
+    mock_ec2 = mock.Mock()
+    mock_boto3.resource.return_value = mock_ec2
+    mock_instance = mock.Mock()
+    mock_ec2.instances.filter.return_value = mock_instance
+    mock_ec2.instances.side_effect = ClientError
+    assert not start_instance('foo-bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_stop_instance_exception(mock_boto3):
+    mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
+    assert not stop_instance('foo-bar')
+    mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
+    assert not stop_instance('foo-bar')
+    mock_ec2 = mock.Mock()
+    mock_boto3.resource.return_value = mock_ec2
+    mock_instance = mock.Mock()
+    mock_ec2.instances.filter.return_value = mock_instance
+    mock_ec2.instances.side_effect = ClientError
+    assert not start_instance('foo-bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_term_instance_exception(mock_boto3):
+    mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
+    assert not terminate_instance('foo-bar')
+    mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
+    assert not terminate_instance('foo-bar')
+    mock_ec2 = mock.Mock()
+    mock_boto3.resource.return_value = mock_ec2
+    mock_instance = mock.Mock()
+    mock_ec2.instances.filter.return_value = mock_instance
+    mock_ec2.instances.side_effect = ClientError
+    assert not start_instance('foo-bar')

@@ -5,6 +5,8 @@ import time
 import os
 
 import boto3
+from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
+from botocore.exceptions import ClientError
 
 from twindb_infrastructure import log
 from twindb_infrastructure.providers.common import wait_sshd
@@ -300,8 +302,16 @@ def start_instance(instance_id):
     :return: Result of start
     :rtype: bool
     """
-    ec2 = boto3.resource('ec2')
-    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
     response = instance.start()
     return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
 
@@ -316,8 +326,16 @@ def terminate_instance(instance_id):
     :return: Result of terminate
     :rtype: bool
     """
-    ec2 = boto3.resource('ec2')
-    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
     response = instance.terminate()
     return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
 
@@ -332,7 +350,15 @@ def stop_instance(instance_id):
     :return: Result of stop
     :rtype: bool
     """
-    ec2 = boto3.resource('ec2')
-    instance = ec2.instances.filter(InstanceIds=[instance_id])
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
     response = instance.stop()
     return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
