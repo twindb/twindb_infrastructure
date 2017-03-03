@@ -4,6 +4,10 @@ import time
 
 import os
 
+import boto3
+from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
+from botocore.exceptions import ClientError
+
 from twindb_infrastructure import log
 from twindb_infrastructure.providers.common import wait_sshd
 
@@ -286,3 +290,84 @@ def mount_volumes(ip, key_file, username, volumes=None):
               % (volume['MountPoint'],
                  volume['DeviceName'],
                  volume['MountPoint'])])
+
+
+def start_instance(instance_id):
+    """
+    Start Amazon instance
+
+
+    :param instance_id: id of instance for run
+    :type instance_id: str
+    :return: Result of start
+    :rtype: bool
+    """
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
+    try:
+        response = instance.start()
+    except ClientError:
+        return False
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+
+
+def terminate_instance(instance_id):
+    """
+    Terminate Amazon instance
+
+
+    :param instance_id: id of instance for terminate
+    :type instance_id: str
+    :return: Result of terminate
+    :rtype: bool
+    """
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
+    try:
+        response = instance.terminate()
+    except ClientError:
+        return False
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+
+
+def stop_instance(instance_id):
+    """
+    Stop Amazon instance
+
+
+    :param instance_id: id of instance for stop
+    :type instance_id: str
+    :return: Result of stop
+    :rtype: bool
+    """
+    try:
+        ec2 = boto3.resource('ec2')
+    except ResourceNotExistsError:
+        return False
+    except UnknownAPIVersionError:
+        return False
+    try:
+        instance = ec2.instances.filter(InstanceIds=[instance_id])
+    except ClientError:
+        return False
+    try:
+        response = instance.stop()
+    except ClientError:
+        return False
+    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
