@@ -5,7 +5,8 @@ import mock
 import pytest
 from twindb_infrastructure import twindb_aws
 from twindb_infrastructure.config.config import Config, ConfigException
-from twindb_infrastructure.providers.aws import start_instance, terminate_instance, stop_instance
+from twindb_infrastructure.providers.aws import start_instance, terminate_instance, stop_instance, ec2_describe_instance, \
+    AwsError, get_instance_state, get_instance_private_ip, get_instance_public_ip, add_name_tag, associate_address
 from twindb_infrastructure.twindb_aws import parse_config
 
 
@@ -211,3 +212,149 @@ def test_term_instance_filter_exception(mock_boto3):
     mock_boto3.resource.return_value = mock_ec2
     mock_ec2.instances.filter.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
     assert not terminate_instance('foo-bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_ec2_describe_instance(mock_boto3):
+    mock_ec2 = mock.Mock()
+    mock_boto3.client.return_value = mock_ec2
+
+    ec2_describe_instance('foo')
+    mock_ec2.describe_instances.assert_called_once_with(InstanceIds=['foo'])
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_ec2_describe_instance_aws_error_on_client_error(mock_boto3):
+    mock_ec2 = mock.Mock()
+    mock_boto3.client.return_value = mock_ec2
+    mock_ec2.describe_instances.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
+
+    with pytest.raises(AwsError):
+        ec2_describe_instance('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_state(mock_describe):
+    get_instance_state('foo')
+    mock_describe.assert_called_once_with('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_state_aws_exception(mock_describe):
+    mock_describe.side_effect = AwsError('AwsError exception')
+    with pytest.raises(AwsError):
+        get_instance_state('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_private_ip(mock_describe):
+    get_instance_private_ip('foo')
+    mock_describe.assert_called_once_with('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_private_ip_aws_exception(mock_describe):
+    mock_describe.side_effect = AwsError('AwsError exception')
+    with pytest.raises(AwsError):
+        get_instance_private_ip('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_public_ip(mock_describe):
+    get_instance_public_ip('foo')
+    mock_describe.assert_called_once_with('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.ec2_describe_instance')
+def test_get_instance_public_ip_aws_exception(mock_describe):
+    mock_describe.side_effect = AwsError('AwsError exception')
+    with pytest.raises(AwsError):
+        get_instance_public_ip('foo')
+
+
+@pytest.mark.parametrize('response, expected_code', [
+    (
+        [{
+            'ResponseMetadata': {
+                'HTTPStatusCode': 200
+            }
+        }],
+        True
+    ),
+    (
+        [{
+            'ResponseMetadata': {
+                'HTTPStatusCode': 404
+            }
+        }],
+        False
+    )
+])
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_add_name_tag(mock_boto3, response, expected_code):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    mock_client.create_tags.return_value = response
+    assert add_name_tag('foo', 'bar') == expected_code
+    mock_client.create_tags.assert_called_once_with(
+        Resources=['foo'],
+        Tags=[
+            {
+                'Key': 'Name',
+                'Value': 'bar'
+            }
+        ]
+    )
+    mock_boto3.client.assert_called_once_with('ec2')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_add_name_tag_exception(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    mock_boto3.client.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
+    with pytest.raises(AwsError):
+        add_name_tag('foo', 'bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_add_name_tag_value_exception(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    mock_client.create_tags.side_effect = ValueError
+
+    with pytest.raises(AwsError):
+        add_name_tag('foo', 'bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_associate_address(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    associate_address('foo', 'bar', 'bah')
+    mock_boto3.client.assert_called_once_with('ec2')
+    mock_client.associate_address.assert_called_once()
+
+
+def test_associate_address_no_params():
+    assert not associate_address('foo')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_associate_address_ec2_exception(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    mock_boto3.client.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
+
+    with pytest.raises(AwsError):
+        associate_address('foo', 'bar', 'bah')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_associate_address_address_exception(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    mock_client.associate_address.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
+
+    with pytest.raises(AwsError):
+        associate_address('foo', 'bar', 'bah')

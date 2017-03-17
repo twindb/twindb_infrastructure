@@ -1,9 +1,5 @@
-import json
-from subprocess import Popen, PIPE, call
+from subprocess import call
 import time
-
-import os
-
 import boto3
 from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
 from botocore.exceptions import ClientError
@@ -25,93 +21,119 @@ AWS_REGIONS = [
 ]
 
 
+class AwsError(Exception):
+    """General error in AWS"""
+
+
 def ec2_describe_instance(instance_id):
-    cmd = [
-        "aws", "ec2", "describe-instances",
-        "--output", "json",
-        "--instance-ids", instance_id
-    ]
+    """
+    Describe EC2 instance by instance id and return an object with its
+    properties
 
+    :param instance_id: Instance id
+    :type instance_id: str
+    :raise: AwsError
+    :return: object with instance properties
+    :rtype: dict
+    """
     try:
-        log.debug("Executing: %r" % cmd)
-        aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        cout, cerr = aws_process.communicate()
-
-        if aws_process.returncode != 0:
-            log.error(cerr)
-            return None
-
-        try:
-            return json.loads(cout)
-        except ValueError as err:
-            log.error(err)
-            log.error(cerr)
-            return None
-    except OSError as err:
-        log.error(err)
-        return None
+        client = boto3.client('ec2')
+        return client.describe_instances(InstanceIds=[instance_id])
+    except ClientError as err:
+        raise AwsError(err)
+    except ValueError as err:
+        raise AwsError('Internal bug in boto3: %s', err)
 
 
 def get_instance_state(instance_id):
-    response = ec2_describe_instance(instance_id)
+    """
+    Get state of instance by instance id
 
+    :param instance_id: Instance id
+    :type instance_id: str
+    :raise: AwsError
+    :return: instance state
+    :rtype str
+    """
     try:
+        response = ec2_describe_instance(instance_id)
         state = response["Reservations"][0]["Instances"][0]["State"]["Name"]
         log.debug("Instance: %s, State: %s" % (instance_id, state))
         return state
-    except ValueError as err:
-        log.error(err)
-        return None
+    except AwsError as err:
+        raise err
 
 
 def get_instance_private_ip(instance_id):
-    response = ec2_describe_instance(instance_id)
+    """
+    Get private IP of instance by instance id
 
+    :param instance_id: Instance id
+    :type instance_id: str
+    :raise: AwsError
+    :return: private ip address of instance
+    :rtype str
+    """
     try:
+        response = ec2_describe_instance(instance_id)
         return response["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
-    except ValueError as err:
-        log.error(err)
-        return None
+    except AwsError as err:
+        raise err
 
 
 def get_instance_public_ip(instance_id):
-    response = ec2_describe_instance(instance_id)
+    """
+    Get public IP of instance by instance id
 
+    :param instance_id: Instance id
+    :type instance_id: str
+    :raise: AwsError
+    :return: public ip address of instance
+    :rtype str
+    """
     try:
+        response = ec2_describe_instance(instance_id)
         return response["Reservations"][0]["Instances"][0]["PublicIpAddress"]
-    except ValueError as err:
-        log.error(err)
-        return None
+    except AwsError as err:
+        raise err
 
 
-def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
-                        aws_access_key_id=None, aws_secret_access_key=None,
-                        private_key_file=None):
-    cmd = [
-        "aws", "ec2", "run-instances",
-        "--output", "json",
-        "--image-id", instance_profile['ImageId'],
-        "--instance-type", instance_profile['InstanceType'],
-        "--key-name", instance_profile['KeyName'],
-        "--subnet-id", instance_profile["SubnetId"]
-    ]
+def launch_ec2_instance(instance_profile, private_key_file=None):
+    """
+    Launch instance
 
-    # Add the security group IDs to the command in the form
-    # "string" "string" ...
+    :param instance_profile: Instance profile
+    :param private_key_file: Private key file
+    :type instance_profile: dict
+    :type private_key_file: str
+    :raise AwsError:
+    :return: Instance id
+    :rtype: str
+    """
+    try:
+        client = boto3.client('ec2')
+    except ClientError as err:
+        raise AwsError(err)
+
+    client_args = {
+        'ImageId': instance_profile['ImageId'],
+        'InstanceType': instance_profile['InstanceType'],
+        'KeyName': instance_profile['KeyName'],
+        'SubnetId': instance_profile["SubnetId"]
+    }
     security_group_ids = list(instance_profile['SecurityGroupId'])
-    cmd.append("--security-group-ids")
-    for group_id in security_group_ids:
-        cmd.append(group_id)
+
+    client_args['SecurityGroupId'] = security_group_ids
+    client_args['SecurityGroupId'] = security_group_ids
 
     if instance_profile.get('AvailabilityZone'):
-        cmd.append('--placement')
-        cmd.append('AvailabilityZone=%s' %
-                   instance_profile['AvailabilityZone'])
+        client_args['Placement'] = {
+            'AvailabilityZone': instance_profile['AvailabilityZone']
+        }
 
     if instance_profile.get('EbsOptimized', False):
-        cmd.append('--ebs-optimized')
+        client_args['EbsOptimized'] = True
 
-    cmd.append('--block-device-mappings')
     device_mappings = [
         {
             "DeviceName": "/dev/sda1",
@@ -140,35 +162,13 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
     except KeyError:
         pass
 
-    cmd.append(json.dumps(device_mappings))
-
-    log.debug("Executing: %s" % ' '.join(cmd))
-    aws_env = {
-        'AWS_ACCESS_KEY_ID': aws_access_key_id,
-        'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
-        'AWS_DEFAULT_REGION': region,
-        'PATH': os.environ['PATH'],
-        'LC_ALL': 'en_US.UTF-8',
-        'LC_CTYPE': 'UTF-8',
-        'LANG': 'en_US'
-    }
-
-    cout, cerr = None, None
+    client_args['BlockDeviceMappings'] = device_mappings
     try:
-        aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=aws_env)
-        cout, cerr = aws_process.communicate()
-
-        if aws_process.returncode != 0:
-            log.error('Failed to execute %s' % ' '.join(cmd))
-            log.error(cerr)
-            return None
-    except OSError as err:
-        log.error('Failed to execute %r' % cmd)
-        log.error(err)
-        exit(-1)
+        response = client.run_instances(**client_args)
+    except ClientError as err:
+        raise AwsError(err)
 
     try:
-        response = json.loads(cout)
         instance_id = response["Instances"][0]["InstanceId"]
 
         # Wait till instance is running
@@ -184,21 +184,23 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
                 return None
 
         if "Name" in instance_profile:
-            if not add_name_tag(instance_id, instance_profile["Name"]):
-                log.error("Failed to set Name tag on instance %s"
-                          % instance_id)
-                return None
+            try:
+                add_name_tag(instance_id, instance_profile["Name"])
+            except AwsError as err:
+                raise err
 
         if "PublicIP" in instance_profile:
             public_ip = instance_profile['PublicIP']
-            if not associate_address(instance_id, public_ip=public_ip):
-                log.error("Failed to assign %s to instance %s"
-                          % (public_ip, instance_id))
-                return None
+            try:
+                associate_address(instance_id, public_ip=public_ip)
+            except AwsError as err:
+                raise err
 
         # Wait will sshd is up
-        ip = get_instance_private_ip(instance_id)
-
+        try:
+            ip = get_instance_private_ip(instance_id)
+        except AwsError as err:
+            raise err
         username = instance_profile["UserName"]
         if not wait_sshd(ip, private_key_file, username):
             return None
@@ -207,72 +209,74 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
             mount_volumes(ip, private_key_file, username,
                           volumes=instance_profile['BlockDeviceMappings'])
         return instance_id
-    except OSError as err:
-        log.error(err)
-        return None
+    except AwsError as err:
+        raise AwsError(err)
 
 
 def add_name_tag(instance_id, name):
-    cmd = ["aws", "ec2", "create-tags",
-           "--output", "json",
-           "--resources", instance_id,
-           "--tags", "Key=Name,Value=%s" % name
-           ]
+    """
+    Added tag to instance
+
+    :param instance_id: Instance id
+    :param name: Tag for instance
+    :type instance_id: str
+    :type name: str
+    :raise: AwsError
+    :return: Result of setting tag
+    :rtype: bool
+    """
     try:
-        aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        cout, cerr = aws_process.communicate()
-
-        if aws_process.returncode != 0:
-            log.error(cerr)
-            return False
-
-        return True
-    except OSError as err:
-        log.error(err)
-        return False
+        client = boto3.client('ec2')
+        response = client.create_tags(
+            Resources=[instance_id],
+            Tags=[
+                {
+                    'Key': 'Name',
+                    'Value': name
+                }
+            ]
+        )
+        return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+    except ClientError as err:
+        raise AwsError(err)
+    except ValueError as err:
+        raise AwsError('Internal bug in boto3: %s', err)
 
 
 def associate_address(instance_id, public_ip=None, private_ip=None):
+    """
+    Associates an Elastic IP address with an instance
+
+    :param instance_id: Instance id
+    :param public_ip: Public ip
+    :param private_ip: Private ip
+    :type instance_id: str
+    :type public_ip: str
+    :type private_ip: str
+    :raise: AwsError
+    """
+
+    kwargs = {
+        'InstanceId': instance_id
+    }
     if public_ip or private_ip:
-        cmd = ["aws", "ec2", "associate-address",
-               "--output", "json",
-               "--instance-id", instance_id]
-        if public_ip:
-            cmd += ["--public-ip", public_ip]
-        if private_ip:
-            cmd += ["--private-ip-address", private_ip]
-
         try:
-            aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            cout, cerr = aws_process.communicate()
+            client = boto3.client('ec2')
 
-            if aws_process.returncode != 0:
-                log.error(cerr)
-                return False
+            if public_ip:
+                kwargs['PublicIp'] = public_ip
 
-            return True
-        except OSError as err:
-            log.error(err)
-            return False
+            if private_ip:
+                kwargs['PrivateIpAddress'] = private_ip
 
+            client.associate_address(**kwargs)
 
-def terminate_ec2_instance(instance_id):
-    cmd = ["aws", "ec2", "terminate-instances",
-           "--instance-ids", instance_id
-           ]
-    try:
-        log.debug("Executing: %r" % cmd)
-        aws_process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        cout, cerr = aws_process.communicate()
-
-        if aws_process.returncode != 0:
-            log.error(cerr)
-            return False
-
-        return True
-    except OSError as err:
-        log.error(err)
-        return False
+        except ClientError as err:
+            raise AwsError(err)
+        except ValueError as err:
+            raise AwsError('Internal bug in boto3: %s', err)
+    else:
+        return None
 
 
 def mount_volumes(ip, key_file, username, volumes=None):
@@ -295,7 +299,6 @@ def mount_volumes(ip, key_file, username, volumes=None):
 def start_instance(instance_id):
     """
     Start Amazon instance
-
 
     :param instance_id: id of instance for run
     :type instance_id: str
@@ -323,7 +326,6 @@ def terminate_instance(instance_id):
     """
     Terminate Amazon instance
 
-
     :param instance_id: id of instance for terminate
     :type instance_id: str
     :return: Result of terminate
@@ -349,7 +351,6 @@ def terminate_instance(instance_id):
 def stop_instance(instance_id):
     """
     Stop Amazon instance
-
 
     :param instance_id: id of instance for stop
     :type instance_id: str

@@ -156,14 +156,9 @@ def launch(template):
     with open(template) as fp:
         instance_profile = json.loads(fp.read())
 
-        aws_access_key_id = CONFIG.aws.aws_access_key_id
-        aws_secret_access_key = CONFIG.aws.aws_secret_access_key
         private_key_file = CONFIG.ssh.private_key_file
         instance_id = \
             launch_ec2_instance(instance_profile,
-                                region=instance_profile['Region'],
-                                aws_access_key_id=aws_access_key_id,
-                                aws_secret_access_key=aws_secret_access_key,
                                 private_key_file=private_key_file)
 
         if not instance_id:
