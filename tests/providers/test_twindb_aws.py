@@ -362,10 +362,37 @@ def test_associate_address_address_exception(mock_boto3):
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_ec2_instance_client_aws_exception(mock_boto3):
+def test_launch_ec2_instance_client_aws_exception(mock_boto3):
     mock_client = mock.Mock()
     mock_boto3.client.return_value = mock_client
     mock_boto3.client.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
 
     with pytest.raises(AwsError):
         launch_ec2_instance({}, 'bar')
+
+
+@mock.patch('twindb_infrastructure.providers.aws.boto3')
+def test_launch_ec2_instance_run_instances_exception(mock_boto3):
+    mock_client = mock.Mock()
+    mock_boto3.client.return_value = mock_client
+    instance_profile = {
+        'ImageId': '',
+        'InstanceType': '',
+        'KeyName': '',
+        'SubnetId': '',
+        'SecurityGroupId': [],
+        'RootVolumeSize': 0,
+        'BlockDeviceMappings': [
+            {
+                'DeviceName': 'Such name',
+                'VolumeSize': 0,
+                'VolumeType': 'such type'
+            }
+        ],
+    }
+    mock_client.run_instances.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
+
+    with pytest.raises(AwsError):
+        launch_ec2_instance(instance_profile)
+
+
