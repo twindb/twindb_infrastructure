@@ -124,7 +124,6 @@ def launch_ec2_instance(instance_profile, private_key_file=None):
     security_group_ids = list(instance_profile['SecurityGroupId'])
 
     client_args['SecurityGroupId'] = security_group_ids
-    client_args['SecurityGroupId'] = security_group_ids
 
     if instance_profile.get('AvailabilityZone'):
         client_args['Placement'] = {
