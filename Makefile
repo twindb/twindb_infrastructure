@@ -62,7 +62,12 @@ lint: ## check style with flake8
 	flake8 twindb_infrastructure tests
 
 test: bootstrap ## run tests quickly with the default Python
-	py.test --flakes --full-trace --verbose --cache-clear tests/
+	py.test --flakes --full-trace --verbose --cache-clear tests/unit
+
+test-integration: bootstrap
+	pip show twindb-infrastructure || pip install -e
+	py.test -xsv tests/integration
+
 
 test-all: ## run tests on every Python version with tox
 	tox
