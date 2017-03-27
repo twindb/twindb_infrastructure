@@ -380,7 +380,7 @@ def test_launch_ec2_instance_run_instances_exception(mock_boto3):
         'InstanceType': '',
         'KeyName': '',
         'SubnetId': '',
-        'SecurityGroupId': [],
+        'SecurityGroupIds': [],
         'RootVolumeSize': 0,
         'MinCount': 1,
         'MaxCount': 1,
