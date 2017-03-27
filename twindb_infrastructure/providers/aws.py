@@ -119,11 +119,14 @@ def launch_ec2_instance(instance_profile, private_key_file=None):
         'ImageId': instance_profile['ImageId'],
         'InstanceType': instance_profile['InstanceType'],
         'KeyName': instance_profile['KeyName'],
-        'SubnetId': instance_profile["SubnetId"]
+        'SubnetId': instance_profile["SubnetId"],
     }
-    security_group_ids = list(instance_profile['SecurityGroupId'])
+    security_group_ids = list(instance_profile['SecurityGroupIds'])
 
-    client_args['SecurityGroupId'] = security_group_ids
+    client_args['SecurityGroupIds'] = security_group_ids
+
+    client_args['MinCount'] = instance_profile["MinCount"]
+    client_args['MaxCount'] = instance_profile["MaxCount"]
 
     if instance_profile.get('AvailabilityZone'):
         client_args['Placement'] = {

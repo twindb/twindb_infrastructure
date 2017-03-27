@@ -382,6 +382,8 @@ def test_launch_ec2_instance_run_instances_exception(mock_boto3):
         'SubnetId': '',
         'SecurityGroupId': [],
         'RootVolumeSize': 0,
+        'MinCount': 1,
+        'MaxCount': 1,
         'BlockDeviceMappings': [
             {
                 'DeviceName': 'Such name',
