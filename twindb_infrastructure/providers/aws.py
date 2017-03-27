@@ -98,20 +98,22 @@ def get_instance_public_ip(instance_id):
         raise err
 
 
-def launch_ec2_instance(instance_profile, private_key_file=None):
+def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0], private_key_file=None):
     """
     Launch instance
 
     :param instance_profile: Instance profile
     :param private_key_file: Private key file
+    :param region: Region name
     :type instance_profile: dict
     :type private_key_file: str
+    :type region: str
     :raise AwsError:
     :return: Instance id
     :rtype: str
     """
     try:
-        client = boto3.client('ec2')
+        client = boto3.client('ec2', region_name=region)
     except ClientError as err:
         raise AwsError(err)
 
@@ -125,8 +127,15 @@ def launch_ec2_instance(instance_profile, private_key_file=None):
 
     client_args['SecurityGroupIds'] = security_group_ids
 
-    client_args['MinCount'] = instance_profile["MinCount"]
-    client_args['MaxCount'] = instance_profile["MaxCount"]
+    if instance_profile.get('MinCount'):
+        client_args['MinCount'] = instance_profile["MinCount"]
+    else:
+        client_args['MinCount'] = 1
+
+    if instance_profile.get('MaxCount'):
+        client_args['MaxCount'] = instance_profile["MaxCount"]
+    else:
+        client_args['MaxCount'] = 1
 
     if instance_profile.get('AvailabilityZone'):
         client_args['Placement'] = {
@@ -238,7 +247,7 @@ def add_name_tag(instance_id, name):
                 }
             ]
         )
-        return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+        return response['ResponseMetadata']['HTTPStatusCode'] == 200
     except ClientError as err:
         raise AwsError(err)
     except ValueError as err:
