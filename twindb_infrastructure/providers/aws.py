@@ -313,24 +313,18 @@ def start_instance(instance_id):
 
     :param instance_id: id of instance for run
     :type instance_id: str
-    :return: Result of start
-    :rtype: bool
     """
     try:
         ec2 = boto3.resource('ec2')
     except ResourceNotExistsError:
-        return False
+        return None
     except UnknownAPIVersionError:
-        return False
+        return None
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
+        instance.start()
     except ClientError:
-        return False
-    try:
-        response = instance.start()
-    except ClientError:
-        return False
-    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+        pass
 
 
 def terminate_instance(instance_id):
@@ -339,24 +333,18 @@ def terminate_instance(instance_id):
 
     :param instance_id: id of instance for terminate
     :type instance_id: str
-    :return: Result of terminate
-    :rtype: bool
     """
     try:
         ec2 = boto3.resource('ec2')
     except ResourceNotExistsError:
-        return False
+        return None
     except UnknownAPIVersionError:
-        return False
+        return None
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
+        instance.terminate()
     except ClientError:
-        return False
-    try:
-        response = instance.terminate()
-    except ClientError:
-        return False
-    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+        pass
 
 
 def stop_instance(instance_id):
@@ -365,21 +353,15 @@ def stop_instance(instance_id):
 
     :param instance_id: id of instance for stop
     :type instance_id: str
-    :return: Result of stop
-    :rtype: bool
     """
     try:
         ec2 = boto3.resource('ec2')
     except ResourceNotExistsError:
-        return False
+        return None
     except UnknownAPIVersionError:
-        return False
+        return None
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
+        instance.stop()
     except ClientError:
-        return False
-    try:
-        response = instance.stop()
-    except ClientError:
-        return False
-    return response[0]['ResponseMetadata']['HTTPStatusCode'] == 200
+        pass
