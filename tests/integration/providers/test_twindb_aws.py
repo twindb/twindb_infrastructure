@@ -1,38 +1,53 @@
 import pytest
 
-from twindb_infrastructure.providers.aws import launch_ec2_instance, terminate_instance, AwsError
+from twindb_infrastructure.providers.aws import launch_ec2_instance, terminate_instance, AwsError, get_instance_state, \
+    ec2_describe_instance, add_name_tag, start_instance, get_instance_private_ip, get_instance_public_ip
 
 
-def test_launch_temninate_ec2_instance():
+@pytest.fixture(scope='session')
+def instance_id(request):
     instance_profile = {
-        "ImageId": "ami-7e69e51e",
-        "BlockDeviceMappings": [
-            {
-                "DeviceName": "/dev/xvdb",
-                "VolumeSize": 200,
-                "VolumeType": "io1",
-                "MountPoint": "/var/lib/mysql",
-                "Iops": 4000
-            },
-            {
-                "DeviceName": "/dev/xvdc",
-                "VolumeSize": 300,
-                "VolumeType": "gp2",
-                "MountPoint": "/var/log/mysql"
-            }
-        ],
+        "ImageId": "ami-a58d0dc5",
         "InstanceType": "t2.micro",
         "KeyName": "tester",
-        "SecurityGroupIds": ["sg-de8a66a5"],
+        "SecurityGroupIds": ["sg-7e3bd205"],
         "SubnetId": "subnet-f0190aa8",
         "RootVolumeSize": 200,
+        "InstanceInitiatedShutdownBehavior": 'stop',
         "AvailabilityZone": "us-west-2c",
-        "UserName": "mkryva",
+        "UserName": "ubuntu",
         "Name": "integraion-test-01",
         "Region": "us-west-2"
     }
+    inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'])
 
-    try:
-        instance_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'])
-    except AwsError as err:
-        print err
+    def resource_teardown():
+        terminate_instance(inst_id)
+
+    request.addfinalizer(resource_teardown)
+    return inst_id
+
+
+def test_instance_state(instance_id):
+    with not pytest.raises(AwsError):
+        get_instance_state(instance_id)
+
+
+def test_describe_instance(instance_id):
+    with not pytest.raises(AwsError):
+        ec2_describe_instance(instance_id)
+
+
+def test_add_name_tag(instance_id):
+    with not pytest.raises(AwsError):
+        assert add_name_tag(instance_id)
+
+
+def test_get_instance_private_ip(instance_id):
+    with not pytest.raises(AwsError):
+        get_instance_private_ip(instance_id)
+
+
+def test_get_instance_public_ip(instance_id):
+    with not pytest.raises(AwsError):
+        get_instance_public_ip(instance_id)

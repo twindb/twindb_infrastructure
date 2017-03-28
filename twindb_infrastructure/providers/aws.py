@@ -316,15 +316,15 @@ def start_instance(instance_id):
     """
     try:
         ec2 = boto3.resource('ec2')
-    except ResourceNotExistsError:
-        return None
-    except UnknownAPIVersionError:
-        return None
+    except ResourceNotExistsError as err:
+        raise AwsError(err)
+    except UnknownAPIVersionError as err:
+        raise AwsError(err)
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
         instance.start()
-    except ClientError:
-        pass
+    except ClientError as err:
+        raise AwsError(err)
 
 
 def terminate_instance(instance_id):
@@ -336,15 +336,15 @@ def terminate_instance(instance_id):
     """
     try:
         ec2 = boto3.resource('ec2')
-    except ResourceNotExistsError:
-        return None
-    except UnknownAPIVersionError:
-        return None
+    except ResourceNotExistsError as err:
+        raise AwsError(err)
+    except UnknownAPIVersionError as err:
+        raise AwsError(err)
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
         instance.terminate()
-    except ClientError:
-        pass
+    except ClientError as err:
+        raise AwsError(err)
 
 
 def stop_instance(instance_id):
@@ -356,12 +356,12 @@ def stop_instance(instance_id):
     """
     try:
         ec2 = boto3.resource('ec2')
-    except ResourceNotExistsError:
-        return None
-    except UnknownAPIVersionError:
-        return None
+    except ResourceNotExistsError as err:
+        raise AwsError(err)
+    except UnknownAPIVersionError as err:
+        raise AwsError(err)
     try:
         instance = ec2.instances.filter(InstanceIds=[instance_id])
         instance.stop()
-    except ClientError:
-        pass
+    except ClientError as err:
+        raise AwsError(err)

@@ -31,94 +31,37 @@ def test_main():
     assert result.exit_code == 0
 
 
-@pytest.mark.parametrize('response, expected_code', [
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 200
-            }
-        }],
-        True
-    ),
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 404
-            }
-        }],
-        False
-    )
-])
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_start_instance(mock_boto3, response, expected_code):
+def test_start_instance(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
-    mock_instance.start.return_value = response
-    assert start_instance('foo-bar') == expected_code
+    start_instance('foo-bar')
     mock_boto3.resource.assert_called_once_with('ec2')
     mock_ec2.instances.filter.assert_called_once_with(InstanceIds=['foo-bar'])
     mock_instance.start.assert_called_once()
 
 
-@pytest.mark.parametrize('response, expected_code', [
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 200
-            }
-        }],
-        True
-    ),
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 404
-            }
-        }],
-        False
-    )
-])
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_terminate_instance(mock_boto3, response, expected_code):
+def test_terminate_instance(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
-    mock_instance.terminate.return_value = response
-    assert terminate_instance('foo-bar') == expected_code
+    terminate_instance('foo-bar')
     mock_boto3.resource.assert_called_once_with('ec2')
     mock_ec2.instances.filter.assert_called_once_with(InstanceIds=['foo-bar'])
     mock_instance.terminate.assert_called_once()
 
 
-@pytest.mark.parametrize('response, expected_code', [
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 200
-            }
-        }],
-        True
-    ),
-    (
-        [{
-            'ResponseMetadata': {
-                'HTTPStatusCode': 404
-            }
-        }],
-        False
-    )
-])
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_stop_instance(mock_boto3, response, expected_code):
+def test_stop_instance(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
-    mock_instance.stop.return_value = response
-    assert stop_instance('foo-bar') == expected_code
+    stop_instance('foo-bar')
     mock_boto3.resource.assert_called_once_with('ec2')
     mock_ec2.instances.filter.assert_called_once_with(InstanceIds=['foo-bar'])
     mock_instance.stop.assert_called_once()
@@ -128,13 +71,15 @@ def test_stop_instance(mock_boto3, response, expected_code):
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_start_instance_resource_exception(mock_boto3):
     mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
-    assert not start_instance('foo-bar')
+    with pytest.raises(AwsError):
+        start_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_start_instance_api_exception(mock_boto3):
     mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
-    assert not start_instance('foo-bar')
+    with pytest.raises(AwsError):
+        start_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -144,7 +89,8 @@ def test_start_instance_exception(mock_boto3):
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
     mock_instance.start.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not start_instance('foo-bar')
+    with pytest.raises(AwsError):
+        start_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -152,19 +98,21 @@ def test_start_instance_filter_exception(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_ec2.instances.filter.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not start_instance('foo-bar')
-
+    with pytest.raises(AwsError):
+        start_instance('foo-bar')
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_stop_instance_resource_exception(mock_boto3):
     mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
-    assert not stop_instance('foo-bar')
+    with pytest.raises(AwsError):
+        stop_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_stop_instance_api_exception(mock_boto3):
     mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
-    assert not stop_instance('foo-bar')
+    with pytest.raises(AwsError):
+        stop_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -174,7 +122,8 @@ def test_stop_instance_exception(mock_boto3):
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
     mock_instance.stop.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not stop_instance('foo-bar')
+    with pytest.raises(AwsError):
+        stop_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -182,19 +131,23 @@ def test_stop_instance_filter_exception(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_ec2.instances.filter.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not stop_instance('foo-bar')
+    with pytest.raises(AwsError):
+        stop_instance('foo-bar')
+
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_term_instance_resource_exception(mock_boto3):
     mock_boto3.resource.side_effect = ResourceNotExistsError(mock.Mock(), 'error', '')
-    assert not terminate_instance('foo-bar')
+    with pytest.raises(AwsError):
+        terminate_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
 def test_term_instance_api_exception(mock_boto3):
     mock_boto3.resource.side_effect = UnknownAPIVersionError(mock.Mock(), 'error', '')
-    assert not terminate_instance('foo-bar')
+    with pytest.raises(AwsError):
+        terminate_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -204,7 +157,8 @@ def test_term_instance_exception(mock_boto3):
     mock_instance = mock.Mock()
     mock_ec2.instances.filter.return_value = mock_instance
     mock_instance.terminate.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not terminate_instance('foo-bar')
+    with pytest.raises(AwsError):
+        terminate_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
@@ -212,7 +166,9 @@ def test_term_instance_filter_exception(mock_boto3):
     mock_ec2 = mock.Mock()
     mock_boto3.resource.return_value = mock_ec2
     mock_ec2.instances.filter.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-    assert not terminate_instance('foo-bar')
+
+    with pytest.raises(AwsError):
+        terminate_instance('foo-bar')
 
 
 @mock.patch('twindb_infrastructure.providers.aws.boto3')
