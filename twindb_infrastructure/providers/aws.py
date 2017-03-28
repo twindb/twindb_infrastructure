@@ -209,7 +209,7 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0], private_key_fil
 
         # Wait will sshd is up
         try:
-            ip = get_instance_private_ip(instance_id)
+            ip = get_instance_public_ip(instance_id)
         except AwsError as err:
             raise err
         username = instance_profile["UserName"]
