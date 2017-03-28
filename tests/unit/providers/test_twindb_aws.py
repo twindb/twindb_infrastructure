@@ -275,19 +275,19 @@ def test_get_instance_public_ip_aws_exception(mock_describe):
 
 @pytest.mark.parametrize('response, expected_code', [
     (
-        [{
+        {
             'ResponseMetadata': {
                 'HTTPStatusCode': 200
             }
-        }],
+        },
         True
     ),
     (
-        [{
+        {
             'ResponseMetadata': {
                 'HTTPStatusCode': 404
             }
-        }],
+        },
         False
     )
 ])
