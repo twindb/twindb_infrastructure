@@ -37,6 +37,7 @@ bootstrap: ## bootstrap the development environment
 	pip install -U "pip-tools>=1.6.0"
 	pip install --editable .
 	pip install -r requirements_dev.txt
+	pip show twindb-infrastructure || pip install -e
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -65,7 +66,6 @@ test: bootstrap ## run tests quickly with the default Python
 	py.test --flakes --full-trace --verbose --cache-clear tests/unit
 
 test-integration: bootstrap
-	pip show twindb-infrastructure || pip install -e
 	py.test -xsv tests/integration
 
 
