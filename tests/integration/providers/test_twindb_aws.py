@@ -18,17 +18,17 @@ AWS_INSTANCE_STATES = [
 @pytest.fixture(scope='session')
 def instance_id(request):
     instance_profile = {
-        "ImageId": "ami-a58d0dc5",
+        "ImageId": "ami-405f7226",
         "InstanceType": "t2.micro",
-        "KeyName": "tester",
-        "SecurityGroupIds": ["sg-7e3bd205"],
-        "SubnetId": "subnet-f0190aa8",
+        "KeyName": "travis-ci",
+        "SecurityGroupIds": ["sg-086eb471"],
+        "SubnetId": "subnet-339a797a",
         "RootVolumeSize": 200,
         "InstanceInitiatedShutdownBehavior": 'stop',
-        "AvailabilityZone": "us-west-2c",
+        "AvailabilityZone": "eu-west-1c",
         "UserName": "ubuntu",
         "Name": "integraion-test-01",
-        "Region": "us-west-2"
+        "Region": "eu-west-1"
     }
     inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'])
     assert get_instance_state(inst_id) == "running"
@@ -66,13 +66,23 @@ def test_get_instance_public_ip(instance_id):
 
 def test_stop_start_instance(instance_id):
     stop_instance(instance_id)
-    assert get_instance_state(instance_id) == "stopping"
-    time.sleep(45)
-    assert get_instance_state(instance_id) == "stopped"
+    flag = False
+    time_over = time.time() + 15 * 60
+    while time.time() < time_over:
+        if get_instance_state(instance_id) == "stopped":
+            flag = True
+            break
+        time.sleep(1)
+    assert flag
     start_instance(instance_id)
-    assert get_instance_state(instance_id) == "pending"
-    time.sleep(45)
-    assert get_instance_state(instance_id) == "running"
+    flag = False
+    time_over = time.time() + 15 * 60
 
+    while time.time() < time_over:
+        if get_instance_state(instance_id) == "running":
+            flag = True
+            break
+        time.sleep(1)
+    assert flag
 
 
