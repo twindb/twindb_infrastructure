@@ -73,7 +73,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: bootstrap ## check code coverage quickly with the default Python
-	pytest --cov=./twindb_infrastructure
+	pytest --cov=./twindb_infrastructure tests/unit
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/twindb_infrastructure.rst

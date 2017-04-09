@@ -98,7 +98,8 @@ def get_instance_public_ip(instance_id):
         raise err
 
 
-def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0], private_key_file=None):
+def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
+                        private_key_file=None):
     """
     Launch instance
 
