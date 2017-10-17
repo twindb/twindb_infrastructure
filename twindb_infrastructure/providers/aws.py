@@ -220,6 +220,14 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
         if 'BlockDeviceMappings' in instance_profile:
             mount_volumes(ip, private_key_file, username,
                           volumes=instance_profile['BlockDeviceMappings'])
+
+        if 'SourceDestCheck' in instance_profile:
+            client.modify_instance_attribute(
+                InstanceId=instance_id,
+                SourceDestCheck={
+                    'Value': instance_profile['SourceDestCheck']
+                }
+            )
         return instance_id
     except AwsError as err:
         raise AwsError(err)
