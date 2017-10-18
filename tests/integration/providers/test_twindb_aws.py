@@ -1,3 +1,6 @@
+import tempfile
+
+import os
 import pytest
 import time
 
@@ -18,19 +21,24 @@ AWS_INSTANCE_STATES = [
 @pytest.fixture(scope='session')
 def instance_id(request):
     instance_profile = {
-        "ImageId": "ami-405f7226",
+        "ImageId": "ami-cd0f5cb6",
         "InstanceType": "t2.micro",
-        "KeyName": "travis-ci",
-        "SecurityGroupIds": ["sg-086eb471"],
-        "SubnetId": "subnet-339a797a",
+        "KeyName": "travis_ci",
+        "SecurityGroupIds": ["sg-c63071b8"],
+        "SubnetId": "subnet-07c5404f",
         "RootVolumeSize": 200,
         "InstanceInitiatedShutdownBehavior": 'stop',
-        "AvailabilityZone": "eu-west-1c",
+        "AvailabilityZone": "us-east-1c",
         "UserName": "ubuntu",
         "Name": "integraion-test-01",
-        "Region": "eu-west-1"
+        "Region": "us-east-1"
     }
-    inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'])
+    key = os.environ['TRAVIS_KEY']
+    temp = tempfile.NamedTemporaryFile()
+    temp.write(key)
+    temp.close()
+    inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'],
+                                  private_key_file=temp.name)
     assert get_instance_state(inst_id) == "running"
 
     def resource_teardown():
