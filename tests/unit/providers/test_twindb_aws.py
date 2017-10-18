@@ -6,8 +6,7 @@ import pytest
 from twindb_infrastructure import twindb_aws
 from twindb_infrastructure.config.config import Config, ConfigException
 from twindb_infrastructure.providers.aws import start_instance, terminate_instance, stop_instance, ec2_describe_instance, \
-    AwsError, get_instance_state, get_instance_private_ip, get_instance_public_ip, add_name_tag, associate_address, \
-    launch_ec2_instance
+    AwsError, get_instance_state, get_instance_private_ip, get_instance_public_ip, add_name_tag, associate_address
 from twindb_infrastructure.twindb_aws import parse_config
 
 
@@ -315,45 +314,5 @@ def test_associate_address_address_exception(mock_boto3):
 
     with pytest.raises(AwsError):
         associate_address('foo', 'bar', 'bah')
-
-
-@mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_launch_ec2_instance_client_aws_exception(mock_boto3):
-    mock_client = mock.Mock()
-    mock_boto3.client.return_value = mock_client
-    mock_boto3.client.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-
-    with pytest.raises(AwsError):
-        launch_ec2_instance({}, 'bar')
-
-
-@mock.patch('twindb_infrastructure.providers.aws.boto3')
-def test_launch_ec2_instance_run_instances_exception(mock_boto3):
-    mock_client = mock.Mock()
-    mock_boto3.client.return_value = mock_client
-    instance_profile = {
-        'ImageId': '',
-        'InstanceType': '',
-        'KeyName': '',
-        'SubnetId': '',
-        'SecurityGroupIds': [],
-        'RootVolumeSize': 0,
-        'MinCount': 1,
-        'MaxCount': 1,
-        'BlockDeviceMappings': [
-            {
-                'DeviceName': 'Such name',
-                'VolumeSize': 0,
-                'VolumeType': 'such type'
-            }
-        ],
-    }
-    mock_client.run_instances.side_effect = ClientError({'Error': {'Code': '404', 'Message': 'Not Found'}}, [])
-
-    with pytest.raises(AwsError):
-        launch_ec2_instance(instance_profile)
-
-
-
 
 
