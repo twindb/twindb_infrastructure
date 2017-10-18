@@ -33,12 +33,7 @@ def instance_id(request):
         "Name": "integraion-test-01",
         "Region": "us-east-1"
     }
-    key = os.environ['TRAVIS_KEY']
-    temp = tempfile.NamedTemporaryFile()
-    temp.write(key)
-    temp.close()
-    inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'],
-                                  private_key_file=temp.name)
+    inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'], private_key_file="~/.ssh/id_rsa")
     assert get_instance_state(inst_id) == "running"
 
     def resource_teardown():
