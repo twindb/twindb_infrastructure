@@ -1,6 +1,7 @@
 from subprocess import call
 import time
 import boto3
+import os
 from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
 from botocore.exceptions import ClientError
 
@@ -114,7 +115,9 @@ def launch_ec2_instance(instance_profile, region=AWS_REGIONS[0],
     :rtype: str
     """
     try:
-        client = boto3.client('ec2', region_name=region)
+        client = boto3.client('ec2', region_name=region,
+                              aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                              aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
     except ClientError as err:
         raise AwsError(err)
 
