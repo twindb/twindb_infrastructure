@@ -2,7 +2,10 @@
 """
 TwinDB Amazon infrastructure
 """
+from subprocess import CalledProcessError
+
 import boto3
+import time
 from botocore.exceptions import ClientError
 import click
 import json
@@ -12,6 +15,8 @@ from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, \
     ConfigException
 from twindb_infrastructure.providers.aws import AWS_REGIONS, \
     launch_ec2_instance, get_instance_private_ip
+from twindb_infrastructure.switchover import restart_proxy, change_names_to, \
+    log_remaining_sessions
 from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf, parse_config
 
@@ -169,3 +174,54 @@ def launch(template):
 
         ip = get_instance_private_ip(instance_id)
         log.info('Instance %s on %s' % (instance_id, ip))
+
+
+@main.command()
+@click.argument('proxy_a')
+@click.argument('proxy_b')
+@click.argument('vip')
+@click.option('--dns', multiple=True,
+              help='Update given DNS names.')
+@click.option('--mysql-user', help='MySQL user to connect to proxies.',
+              default='root', show_default=True)
+@click.option('--mysql-password', help='Password for MySQL user.',
+              default='', show_default=True)
+@click.option('--mysql-port', help='TCP port that open for MySQL connections.',
+              default=3306, show_default=True)
+def switch_proxy(proxy_a, proxy_b, vip, dns):
+    """Switch active ProxySQL from proxy_a to proxy_b.
+
+    proxy_a is a currently active proxy.
+
+    proxy_b is to be active proxy.
+
+    VIP is virtual IP.
+    """
+
+    log.info("Switching active ProxySQL from %s to %s", proxy_a, proxy_b)
+    log.debug('DNS names: %s', ', '.join(dns))
+
+    # Step 1. Restart ProxyB
+    try:
+        # restart_proxy(proxy_b)
+        pass
+    except CalledProcessError as err:
+        log.error(err)
+        exit(1)
+
+    # Step 2, 3. Change DNS so dns points to Proxy B Private IP
+    change_names_to(dns, proxy_b)
+
+    # Step 4. Wait TTL * 2 time
+    time.sleep(120)
+
+    # Step 5. Check if any MySQL users are connected to Proxy A
+    #   (and log if any)
+    log_remaining_sessions(proxy_a, user, password, port)
+
+    # 6. Stop Proxy A
+    # 7. Wait until eth1 shows up on Proxy B. If not - log error and stop.
+    # 8. Start Proxy A
+    # 9. Change DNS so dns points to points to VIP
+    # 10. Change DNS so dns points to points to VIP
+
