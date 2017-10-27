@@ -76,3 +76,16 @@ def bootstrap_next_node(node, datadir):
     _execute_remote("sudo mysql_install_db", node)
     _execute_remote('sudo chown -R mysql:mysql "%s"' % (datadir, ), node)
     _execute_remote("sudo systemctl start mysql", node)
+
+
+def domainname(name):
+    """Extracts domain name from a fqdn
+
+    :param name: FQDN like www.google.com or www.yahoo.com.
+    :type name: str
+    :return: domain name like google.com  or yahoo.com.
+    :rtype: str
+    """
+    result = name.split('.')
+    result.pop(0)
+    return '.'.join(result)
