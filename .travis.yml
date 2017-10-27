@@ -24,4 +24,4 @@ deploy:
   user: twindb
 
 before_install:
-- openssl aes-256-cbc -K $encrypted_cdc507ca0594_key -iv $encrypted_cdc507ca0594_iv -in deployer.key.enc -out ~/.ssh/id_rsa -d
+- openssl aes-256-cbc -K $encrypted_b5d684c3f7a3_key -iv $encrypted_b5d684c3f7a3_iv -in deployer.key.enc -out ~/.ssh/id_rsa -d
