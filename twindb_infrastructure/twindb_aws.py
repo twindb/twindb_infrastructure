@@ -16,7 +16,8 @@ from twindb_infrastructure.config.config import TWINDB_INFRA_CONFIG, \
 from twindb_infrastructure.providers.aws import AWS_REGIONS, \
     launch_ec2_instance, get_instance_private_ip
 from twindb_infrastructure.switchover import change_names_to, \
-    log_remaining_sessions, stop_proxy, eth1_present, start_proxy, restart_proxy
+    log_remaining_sessions, stop_proxy, eth1_present, start_proxy, \
+    restart_proxy
 from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf, parse_config
 
@@ -198,12 +199,6 @@ def switch_proxy(proxy_a, proxy_b, vip, dns,
 
     VIP is virtual IP.
     """
-    # n_conn = log_remaining_sessions(proxy_a,
-    #                                 mysql_user,
-    #                                 mysql_password,
-    #                                 mysql_port)
-    # print(n_conn)
-    # exit(0)
     if proxy_a == proxy_b:
         log.error('Proxy A and Proxy B cannot be same')
         exit(1)

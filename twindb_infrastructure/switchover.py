@@ -1,8 +1,6 @@
 from contextlib import contextmanager
-from pprint import pprint
 
 import boto3
-# import pymysql
 from subprocess import check_call, CalledProcessError
 
 import pymysql
@@ -55,10 +53,7 @@ def change_names_to(names, ip_addr):
             response = client.list_hosted_zones_by_name(
                 DNSName=domainname(name),
             )
-            # pprint(response)
             zone_id = response['HostedZones'][0]['Id']
-            # print(zone_id)
-            # print(region)
             request = {
                 'HostedZoneId': zone_id,
                 'ChangeBatch': {
@@ -80,10 +75,7 @@ def change_names_to(names, ip_addr):
                     ]
                 }
             }
-            # print(request)
-            response = client.change_resource_record_sets(**request)
-            # print('response')
-            # pprint(response)
+            client.change_resource_record_sets(**request)
 
 
 def log_remaining_sessions(host, user='root', password='', port=3306):
