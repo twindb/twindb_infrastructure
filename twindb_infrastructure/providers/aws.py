@@ -1,7 +1,6 @@
 from subprocess import call
 import time
 import boto3
-import os
 from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
 from botocore.exceptions import ClientError
 
