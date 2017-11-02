@@ -30,7 +30,7 @@ def instance_id(request):
         "InstanceInitiatedShutdownBehavior": 'stop',
         "AvailabilityZone": "us-east-1c",
         "UserName": "ubuntu",
-        "Name": "integraion-test-01",
+        "Name": "integraion-test",
         "Region": "us-east-1"
     }
     inst_id = launch_ec2_instance(instance_profile, region=instance_profile['Region'], private_key_file="~/.ssh/id_rsa")
