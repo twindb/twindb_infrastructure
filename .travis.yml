@@ -26,3 +26,4 @@ deploy:
 
 before_install:
 - openssl aes-256-cbc -K $encrypted_b5d684c3f7a3_key -iv $encrypted_b5d684c3f7a3_iv -in deployer.key.enc -out ~/.ssh/id_rsa -d
+- chmod 0600 ~/.ssh/id_rsa
