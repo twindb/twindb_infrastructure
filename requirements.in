@@ -1,0 +1,4 @@
+boto3
+Click>=6.0
+logutils
+pymysql
