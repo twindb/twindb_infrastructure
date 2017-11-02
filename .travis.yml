@@ -2,8 +2,8 @@ language: python
 python: 2.7
 install: pip install -U -rrequirements_dev.txt
 script:
-- tox -e ${TOXENV}
-- codecov
+- sudo tox -e ${TOXENV}
+- sudo codecov
 env:
   matrix:
   - TOXENV=py27
