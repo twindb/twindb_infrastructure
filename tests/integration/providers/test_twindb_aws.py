@@ -18,7 +18,7 @@ AWS_INSTANCE_STATES = [
 ]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def instance_id(request):
     instance_profile = {
         "ImageId": "ami-cd0f5cb6",
