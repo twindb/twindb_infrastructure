@@ -2,6 +2,7 @@ language: python
 python: 2.7
 install: pip install -U -rrequirements_dev.txt
 script:
+- if [ -z "$AWS_SECRET_ACCESS_KEY" ] then echo "not defined" else echo "defined" fi
 - tox -e ${TOXENV}
 - codecov
 env:
