@@ -4,6 +4,7 @@ import boto3
 from subprocess import check_call, CalledProcessError
 
 import pymysql
+from pymysql import MySQLError
 from pymysql.cursors import DictCursor
 
 from twindb_infrastructure import log
@@ -97,6 +98,24 @@ def log_remaining_sessions(host, user='root', password='', port=3306):
                 break
 
     return nrows
+
+
+def server_ready(host, user='root', password='', port=3306):
+    """Connect to host and execute SELECT 1 to make sure
+    it's up and running.
+
+    :return: True if server is ready for connections
+    :rtype: bool
+    """
+    try:
+        with _connect(host, user=user, password=password, port=port) as conn:
+            cursor = conn.cursor()
+            query = "SELECT 1"
+            cursor.execute(query)
+            return True
+    except MySQLError as err:
+        log.error(err)
+        return False
 
 
 def eth1_present(proxy):
