@@ -17,7 +17,7 @@ from twindb_infrastructure.providers.aws import AWS_REGIONS, \
     launch_ec2_instance, get_instance_private_ip
 from twindb_infrastructure.switchover import change_names_to, \
     log_remaining_sessions, stop_proxy, eth1_present, start_proxy, \
-    restart_proxy
+    restart_proxy, server_ready
 from twindb_infrastructure.tagset import TagSet
 from twindb_infrastructure.util import printf, parse_config
 
@@ -199,6 +199,14 @@ def switch_proxy(proxy_a, proxy_b, vip, dns,
 
     VIP is virtual IP.
     """
+    for host in [proxy_a, proxy_b, vip]:
+        if not server_ready(host,
+                            user=mysql_user,
+                            password=mysql_password,
+                            port=mysql_port):
+            log.error('Server %s must be up and running to do switchover',
+                      host)
+            exit(1)
     if proxy_a == proxy_b:
         log.error('Proxy A and Proxy B cannot be same')
         exit(1)
@@ -255,7 +263,10 @@ def switch_proxy(proxy_a, proxy_b, vip, dns,
     wait_time = 60
     timeout = time.time() + wait_time
     while time.time() < timeout:
-        if eth1_present(proxy_b):
+        if eth1_present(proxy_b) and server_ready(vip,
+                                                  user=mysql_user,
+                                                  password=mysql_password,
+                                                  port=mysql_port):
             break
         time.sleep(3)
 
