@@ -15,7 +15,7 @@ env:
   - secure: DV4Nug2+/DVu+cBgO+M1Na5E/l/CSSZaCSOSC4Gu7zrSZHrCvxZ2taVhukYsD6BjL5U9Mm1XTqu5vMB2EvCTP1w0o2ZBEI0M1V06D35KMFOErSdLYU1TrI4/CauUSwg/ankgY22K9/OWfmnEJrCkPMmoVfhvPqbDQpk7tHwF/88wuSFbv3YU9YYFrCWFmkXZx9lGbLvZac24tTP3Oe2mC+gKgVFta7uB1V/jnwyGOs4HUunWBEr08PAMP0NHdJ9s6ZI+XRbRKEMjTx6C4COOwKfVcb3UZCwbhV375a71OjurtyRqOOP9QwVzv4iO5NUF/BSRLowCxAXAGMN5cn+jPEqHf2byM6u4oNwzIwv0Qzy4jPXzIwvbHCuAr8FOxvHdSdXDtUDyrH3QdsoMTQ0s84b2qwNjuu4iYtNlE96mZIQmnLEwu2UgE2RfRZyA1lSPycggOniaDcwWJdl/ifrymEXaJC6GgOgf2WDdG+9j1nxzrmBUtgHUrBewfErywLCtOVCnHb58NmPIigpDzC7THdnoo45J4VpogUqpisa7GK/kmIsaMStN5I1yHgmb6bSNyZfhbkwafdC3kdVkfMfH8oIDThe5QatnIvQcbhfcKrAiGk4dJHn7SSh1Nf0W6BAWkAR6KKqpIsz1Gv9+dMkeLAtxc8vP/lwAU5u/WC8ujTQ=
 deploy:
   on:
-    condition: "$TOXENV == py27"
+    condition: $TOXENV == py27
     repo: twindb/twindb_infrastructure
     tags: true
   distributions: sdist bdist_wheel
