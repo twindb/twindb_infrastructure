@@ -1,7 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from pip.req import parse_requirements
 from setuptools import setup, find_packages
+
+
+def parse_requirements(path):
+    """
+    Parses requirements from a file given by path and return a list consumable by setuptools.
+
+    :param path: Path to requirements file
+    :type path: str
+    :return: List of requirements.
+    :rtype: list
+    """
+    with open(path) as fp:
+        reqs = fp.read().strip().split('\n')
+
+    return [x for x in reqs if x and not x.strip().startswith('#')]
+
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -9,11 +24,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [str(ir.req) for ir in
-                parse_requirements('requirements.txt', session=False)]
+requirements = parse_requirements('requirements.txt')
 
-test_requirements = [str(ir.req) for ir in
-                     parse_requirements('requirements_dev.txt', session=False)]
+test_requirements = parse_requirements('requirements_dev.txt')
 
 setup(
     name='twindb-infrastructure',
@@ -46,10 +59,6 @@ setup(
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
     tests_require=test_requirements
