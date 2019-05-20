@@ -31,17 +31,11 @@ virtualenv: ## create virtual environment typically used for development purpose
 	virtualenv env --setuptools --prompt='(twindb_infrastructure)'
 
 
-.PHONY: upgrade-requirements
-upgrade-requirements: ## Upgrade requirements
-	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
-	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
-
 .PHONY: bootstrap
 bootstrap: ## bootstrap the development environment
-	pip install -U "setuptools>=32.3.1"
-	pip install -U "pip>=9.0.1"
-	pip install -U "pip-tools>=1.6.0"
-	pip-sync requirements.txt requirements_dev.txt
+	pip install -U "setuptools ~= 41.0"
+	pip install -U "pip ~= 19.1"
+	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
@@ -68,7 +62,7 @@ lint: ## check style with flake8
 	flake8 twindb_infrastructure
 
 test: bootstrap ## run tests quickly with the default Python
-	py.test --flakes --full-trace --verbose --cache-clear tests/unit
+	python setup.py test
 
 test-integration: bootstrap
 	py.test -xsv tests/integration
