@@ -30,7 +30,7 @@ test_requirements = parse_requirements('requirements_dev.txt')
 
 setup(
     name='twindb-infrastructure',
-    version='1.1.6',
+    version='1.2.0',
     description="TwinDB Infrastructure is a collection of everything"
                 " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
@@ -44,7 +44,8 @@ setup(
         'console_scripts': [
             'twindb-aws=twindb_infrastructure.twindb_aws:main',
             'twindb-chef=twindb_infrastructure.twindb_chef:main',
-            'twindb-galera=twindb_infrastructure.twindb_galera:main'
+            'twindb-galera=twindb_infrastructure.twindb_galera:main',
+            'twindb-monitoring=twindb_infrastructure.monitoring:main',
         ]
     },
     include_package_data=True,
