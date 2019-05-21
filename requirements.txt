@@ -2,3 +2,4 @@ boto3 ~= 1.9
 Click ~= 7.0
 logutils ~= 0.3
 pymysql ~= 0.9
+requests ~= 2.22
