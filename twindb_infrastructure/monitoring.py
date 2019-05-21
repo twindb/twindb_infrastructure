@@ -1,6 +1,7 @@
 """twindb-monitoring CLI module."""
 import re
 import time
+from warnings import filterwarnings
 
 import click
 from requests import RequestException
@@ -11,6 +12,7 @@ NAGIOS_EXIT_OK = 0
 NAGIOS_EXIT_WARNING = 1
 NAGIOS_EXIT_CRITICAL = 2
 NAGIOS_EXIT_UNKNOWN = 3
+
 
 @click.group()
 @click.version_option()
@@ -49,13 +51,20 @@ def main():
     '--body-regexp',
     help='Expect the regexp to match the body',
 )
+@click.option(
+    '--http',
+    help='Print result as an HTTP response',
+    is_flag=True,
+    default=False
+)
 def check_http(url,
                warning,
                critical,
                timeout,
                title,
                title_regexp,
-               body_regexp
+               body_regexp,
+               http
                ):
     """
     Make an HTTP(s) GET request and check response against given criteria.
@@ -68,6 +77,7 @@ def check_http(url,
         - 2 - Critical
         - 3 - Unknown
     """
+    filterwarnings("ignore")
     start_time = time.time()
     try:
         loader = Loader(url, timeout=timeout)
@@ -77,46 +87,83 @@ def check_http(url,
 
         if critical is not None:
             if load_time > critical:
-                print(
+                print_response(
                     'CRITICAL - %s: load time %f seconds more than %f'
-                    % (url, load_time, critical)
+                    % (url, load_time, critical),
+                    http=http, http_code=503
                 )
                 exit(NAGIOS_EXIT_CRITICAL)
 
         if warning is not None:
             if load_time > warning:
-                print(
+                print_response(
                     'WARNING - %s: load time %f seconds more than %f'
-                    % (url, load_time, critical)
+                    % (url, load_time, critical),
+                    http=http, http_code=200
                 )
                 exit(NAGIOS_EXIT_WARNING)
 
         if title and loader.title != title:
-            print(
+            print_response(
                 "CRITICAL - %s: Expected title %s. Actual title '%s'"
-                % (url, title, loader.title)
+                % (url, title, loader.title),
+                http=http, http_code=503
             )
             exit(NAGIOS_EXIT_CRITICAL)
 
         if title_regexp and re.match(title_regexp, loader.title) is None:
-            print(
+            print_response(
                 "CRITICAL - %s: Title '%s' is expected to match regexp '%s'"
-                % (url, loader.title, title_regexp)
+                % (url, loader.title, title_regexp),
+                http=http, http_code=503
             )
             exit(NAGIOS_EXIT_CRITICAL)
 
         if body_regexp and re.match(body_regexp, loader.body) is None:
-            print(
+            print_response(
                 "CRITICAL - %s: Body '%s' is expected to match regexp '%s'"
-                % (url, loader.body, body_regexp)
+                % (url, loader.body, body_regexp),
+                http=http, http_code=503
             )
             exit(NAGIOS_EXIT_CRITICAL)
 
     except RequestException as err:
-        print(
-            "UNKNOWN - %s" % err
+        print_response(
+            "UNKNOWN - %s" % err,
+            http=http, http_code=503
         )
         exit(NAGIOS_EXIT_UNKNOWN)
 
-    print('OK')
+    print_response('OK', http=http, http_code=200)
     exit(NAGIOS_EXIT_OK)
+
+
+def print_response(msg, http=False, http_code=None):
+    """
+    Print response after the check.
+
+    :param msg: Message to output to the client.
+    :param http: If True the response is meant to be for an HTTP client.
+    :type http: bool
+    :param http_code: If it's an HTTP response use this code as a HTTP code.
+    :type http_code: int
+    """
+    if http:
+        print(
+            "HTTP/1.1 {code} {short_message}".format(
+                code=http_code,
+                short_message="OK"
+                if http_code == 200 else "Service Unavailable",
+            )
+        )
+        print("Content-Type: text/plain; charset=UTF-8")
+        print("Connection: close")
+        print(
+            "Content-Length: {len}".format(
+                len=len(msg) + 1
+            )
+        )
+        print("")
+        print(msg)
+    else:
+        print(msg)
