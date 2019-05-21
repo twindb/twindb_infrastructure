@@ -30,7 +30,7 @@ test_requirements = parse_requirements('requirements_dev.txt')
 
 setup(
     name='twindb-infrastructure',
-    version='1.2.0',
+    version='1.3.0',
     description="TwinDB Infrastructure is a collection of everything"
                 " to manage TwinDB infrastructure",
     long_description=readme + '\n\n' + history,
