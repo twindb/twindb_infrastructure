@@ -57,6 +57,16 @@ def main():
     is_flag=True,
     default=False
 )
+@click.option(
+    '--host',
+    help='Pass this value as Host: HTTP header',
+)
+@click.option(
+    '--protocol',
+    help='This value is used for X-Forwarded-Proto header',
+    default='http',
+    show_default=True,
+)
 def check_http(url,
                warning,
                critical,
@@ -64,7 +74,9 @@ def check_http(url,
                title,
                title_regexp,
                body_regexp,
-               http
+               http,
+               host,
+               protocol,
                ):
     """
     Make an HTTP(s) GET request and check response against given criteria.
@@ -80,8 +92,13 @@ def check_http(url,
     filterwarnings("ignore")
     start_time = time.time()
     try:
-        loader = Loader(url, timeout=timeout)
-        assert loader.title
+        loader = Loader(
+            url,
+            timeout=timeout,
+            host=host,
+            protocol=protocol
+        )
+        assert loader.title, '%s returns empty HTML title' % url
         finish_time = time.time()
         load_time = finish_time - start_time
 
@@ -127,7 +144,7 @@ def check_http(url,
             )
             exit(NAGIOS_EXIT_CRITICAL)
 
-    except RequestException as err:
+    except (RequestException, AssertionError) as err:
         print_response(
             "UNKNOWN - %s" % err,
             http=http, http_code=503
