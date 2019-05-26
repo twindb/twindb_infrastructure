@@ -5,7 +5,7 @@ import requests
 
 
 class Loader(HTMLParser):
-    def __init__(self, url, timeout=10):
+    def __init__(self, url, timeout=10, host=None, protocol=None):
         HTMLParser.__init__(self)
         self._url = url
         self._timeout = timeout
@@ -13,6 +13,8 @@ class Loader(HTMLParser):
         self._body = None
         self._title = None
         self.__current_tag = None
+        self._host = host
+        self._protocol = protocol
 
     @property
     def body(self):
@@ -34,10 +36,19 @@ class Loader(HTMLParser):
     @property
     def _response(self):
         if self.__response is None:
-            resp = requests.get(
-                self._url,
-                timeout=self._timeout
-            )
+            kwargs = {
+                'timeout': self._timeout,
+                'allow_redirects': False,
+            }
+            headers = {}
+            if self._host:
+                headers['Host'] = self._host
+            if self._protocol:
+                headers['X-Forwarded-Proto'] = self._protocol
+            if headers:
+                kwargs['headers'] = headers
+
+            resp = requests.get(self._url, **kwargs)
             resp.raise_for_status()
             self.__response = resp.content
 
