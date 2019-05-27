@@ -189,7 +189,7 @@ class HttpChecker(object):
             }
 
             if resp_class == CheckHttpResponse:
-                kwargs['http_code'] = 200
+                kwargs['http_code'] = 503
 
         return resp_class(**kwargs)
 
