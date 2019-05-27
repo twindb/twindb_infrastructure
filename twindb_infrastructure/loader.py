@@ -2,9 +2,10 @@
 from HTMLParser import HTMLParser
 
 import requests
+import time
 
 
-class Loader(HTMLParser):
+class Loader(object, HTMLParser):
     def __init__(self, url, timeout=10, host=None, protocol=None):
         HTMLParser.__init__(self)
         self._url = url
@@ -15,14 +16,28 @@ class Loader(HTMLParser):
         self.__current_tag = None
         self._host = host
         self._protocol = protocol
+        self._load_time = None
 
     @property
     def body(self):
         return self._get_tag('body')
 
     @property
+    def load_time(self):
+        if self._load_time is None:
+            start = time.time()
+            self.load()
+            self._load_time = time.time() - start
+
+        return self._load_time
+
+    @property
     def title(self):
         return self._get_tag('title')
+
+    @property
+    def url(self):
+        return self._url
 
     def handle_starttag(self, tag, attrs):
         self.__current_tag = tag
@@ -32,6 +47,16 @@ class Loader(HTMLParser):
 
     def handle_data(self, data):
         setattr(self, '_%s' % self.__current_tag, data)
+
+    def load(self):
+        return self._response
+
+    def reset(self):
+        super(Loader, self).reset()
+        self.__response = None
+        self._body = None
+        self._title = None
+        self._load_time = None
 
     @property
     def _response(self):
