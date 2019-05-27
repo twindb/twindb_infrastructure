@@ -1,17 +1,9 @@
 """twindb-monitoring CLI module."""
-import re
-import time
-from warnings import filterwarnings
-
 import click
-from requests import RequestException
 
+from twindb_infrastructure.check_http import \
+    HttpChecker, CheckHttpResponse, CheckResponse
 from twindb_infrastructure.loader import Loader
-
-NAGIOS_EXIT_OK = 0
-NAGIOS_EXIT_WARNING = 1
-NAGIOS_EXIT_CRITICAL = 2
-NAGIOS_EXIT_UNKNOWN = 3
 
 
 @click.group()
@@ -67,6 +59,19 @@ def main():
     default='http',
     show_default=True,
 )
+@click.option(
+    '--http-server',
+    help='Run an HTTP server that reports the check result',
+    is_flag=True,
+    default=False
+)
+@click.option(
+    '--http-port',
+    help='Bind the HTTP server to this TCP port',
+    type=click.INT,
+    default=8080,
+    show_default=True,
+)
 def check_http(url,
                warning,
                critical,
@@ -77,6 +82,8 @@ def check_http(url,
                http,
                host,
                protocol,
+               http_server,
+               http_port
                ):
     """
     Make an HTTP(s) GET request and check response against given criteria.
@@ -89,98 +96,27 @@ def check_http(url,
         - 2 - Critical
         - 3 - Unknown
     """
-    filterwarnings("ignore")
-    start_time = time.time()
-    try:
-        loader = Loader(
-            url,
-            timeout=timeout,
-            host=host,
-            protocol=protocol
-        )
-        assert loader.title, '%s returns empty HTML title' % url
-        finish_time = time.time()
-        load_time = finish_time - start_time
+    loader = Loader(
+        url,
+        timeout=timeout,
+        host=host,
+        protocol=protocol
+    )
+    checker = HttpChecker(
+        critical_load_time=critical,
+        warning_load_time=warning,
+        title=title,
+        title_regexp=title_regexp,
+        body_regexp=body_regexp
+    )
 
-        if critical is not None:
-            if load_time > critical:
-                print_response(
-                    'CRITICAL - %s: load time %f seconds more than %f'
-                    % (url, load_time, critical),
-                    http=http, http_code=503
-                )
-                exit(NAGIOS_EXIT_CRITICAL)
+    if http_server:
+        checker.start_server(http_port, loader)
 
-        if warning is not None:
-            if load_time > warning:
-                print_response(
-                    'WARNING - %s: load time %f seconds more than %f'
-                    % (url, load_time, critical),
-                    http=http, http_code=200
-                )
-                exit(NAGIOS_EXIT_WARNING)
-
-        if title and loader.title != title:
-            print_response(
-                "CRITICAL - %s: Expected title %s. Actual title '%s'"
-                % (url, title, loader.title),
-                http=http, http_code=503
-            )
-            exit(NAGIOS_EXIT_CRITICAL)
-
-        if title_regexp and re.match(title_regexp, loader.title) is None:
-            print_response(
-                "CRITICAL - %s: Title '%s' is expected to match regexp '%s'"
-                % (url, loader.title, title_regexp),
-                http=http, http_code=503
-            )
-            exit(NAGIOS_EXIT_CRITICAL)
-
-        if body_regexp and re.match(body_regexp, loader.body) is None:
-            print_response(
-                "CRITICAL - %s: Body '%s' is expected to match regexp '%s'"
-                % (url, loader.body, body_regexp),
-                http=http, http_code=503
-            )
-            exit(NAGIOS_EXIT_CRITICAL)
-
-    except (RequestException, AssertionError) as err:
-        print_response(
-            "UNKNOWN - %s" % err,
-            http=http, http_code=503
-        )
-        exit(NAGIOS_EXIT_UNKNOWN)
-
-    print_response('OK', http=http, http_code=200)
-    exit(NAGIOS_EXIT_OK)
-
-
-def print_response(msg, http=False, http_code=None):
-    """
-    Print response after the check.
-
-    :param msg: Message to output to the client.
-    :param http: If True the response is meant to be for an HTTP client.
-    :type http: bool
-    :param http_code: If it's an HTTP response use this code as a HTTP code.
-    :type http_code: int
-    """
-    if http:
-        print(
-            "HTTP/1.1 {code} {short_message}".format(
-                code=http_code,
-                short_message="OK"
-                if http_code == 200 else "Service Unavailable",
-            )
-        )
-        print("Content-Type: text/plain; charset=UTF-8")
-        print("Connection: close")
-        print(
-            "Content-Length: {len}".format(
-                len=len(msg) + 1
-            )
-        )
-        print("")
-        print(msg)
     else:
-        print(msg)
+        response = checker.check(
+            loader,
+            CheckHttpResponse if http else CheckResponse
+        )
+        print(response)
+        exit(response.nagios_code)
