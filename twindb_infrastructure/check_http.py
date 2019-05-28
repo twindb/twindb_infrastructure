@@ -33,17 +33,16 @@ class CheckHttpResponse(CheckResponse):
         return self._http_code
 
     def __str__(self):
-        return """HTTP/1.1 {code} {short_message}
-Content-Type: text/plain; charset=UTF-8
-Connection: close
-Content-Length: {len}
-
-{msg}
-""".format(
+        template = "HTTP/1.1 {code} {short_message}\r\n" \
+                   "Content-Type: text/plain; charset=UTF-8\r\n" \
+                   "Connection: close\r\n" \
+                   "Content-Length: {len}\r\n\r\n" \
+                   "{msg}\r\n"
+        return template.format(
             code=self._http_code,
             short_message="OK" if self._http_code == 200
             else "Service unavailable",
-            len=len(self._message) + 1,
+            len=len(self._message) + 2,
             msg=self._message
         )
 
@@ -215,12 +214,11 @@ class HttpChecker(object):
                     loader,
                     CheckHttpResponse
                 )
-                loader.reset()
-                c.sendall(str(response))
-                # Receive all outstanding bytes, otherwise the client will
-                # get a RST
                 c.recv(4096)
+                c.sendall(str(response))
+                c.shutdown(socket.SHUT_RDWR)
                 c.close()
+                loader.reset()
 
         except KeyboardInterrupt:
             return
